@@ -15,11 +15,10 @@ $seller_id = $_SESSION['user_id'];
 $seller_name = $_SESSION['full_name'];
 
 // --- 1. LOGIKA FILTER TANGGAL ---
-$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01'); // Default tanggal 1 bulan ini
-$end_date   = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');     // Default hari ini
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01'); 
+$end_date   = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');     
 
 // --- 2. QUERY LAPORAN ---
-// Hanya mengambil order yang statusnya 'finished' agar data keuangan valid
 $query_report = "
     SELECT 
         o.invoice_number,
@@ -41,20 +40,47 @@ $query_report = "
 
 $reports = mysqli_query($conn, $query_report);
 
-// Hitung Ringkasan Total untuk Kartu Statistik
+// --- 3. PENGOLAHAN DATA UNTUK STATISTIK & GRAFIK ---
 $total_revenue = 0;
 $total_sold_items = 0;
-$total_transactions = mysqli_num_rows($reports);
-
-// Simpan data ke array agar bisa diloop ulang di tabel tanpa query lagi
 $data_rows = [];
+
+// Array untuk Grafik
+$daily_revenue = []; // Untuk Line Chart
+$book_sales = [];    // Untuk Pie Chart
+
 while ($row = mysqli_fetch_assoc($reports)) {
     $total_revenue += $row['subtotal'];
     $total_sold_items += $row['qty'];
     $data_rows[] = $row;
+
+    // Data Grafik Pendapatan Harian
+    $date_key = date('Y-m-d', strtotime($row['order_date']));
+    if (!isset($daily_revenue[$date_key])) $daily_revenue[$date_key] = 0;
+    $daily_revenue[$date_key] += $row['subtotal'];
+
+    // Data Grafik Buku Terlaris
+    $book_key = $row['book_title'];
+    if (!isset($book_sales[$book_key])) $book_sales[$book_key] = 0;
+    $book_sales[$book_key] += $row['qty'];
 }
 
-// --- 3. DATA NOTIFIKASI (NAVBAR) ---
+$total_transactions = count($data_rows);
+
+// Urutkan Tanggal (Ascending) untuk Grafik Garis
+ksort($daily_revenue);
+
+// Urutkan Buku Terlaris (Descending) dan Ambil Top 5
+arsort($book_sales);
+$book_sales_top5 = array_slice($book_sales, 0, 5);
+
+// Siapkan JSON untuk JavaScript Chart
+$json_dates = json_encode(array_keys($daily_revenue));
+$json_revenues = json_encode(array_values($daily_revenue));
+$json_books = json_encode(array_keys($book_sales_top5));
+$json_qtys = json_encode(array_values($book_sales_top5));
+
+// --- 4. DATA NOTIFIKASI ---
 $query_orders = mysqli_query($conn, "SELECT COUNT(DISTINCT o.id) as total FROM orders o JOIN order_items oi ON o.id = oi.order_id WHERE oi.seller_id = '$seller_id' AND (o.status = 'pending' OR o.status = 'waiting_approval')");
 $total_new_orders = mysqli_fetch_assoc($query_orders)['total'];
 $query_unread = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$seller_id' AND is_read = 0");
@@ -73,6 +99,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style type="text/tailwindcss">
     :root {
@@ -160,6 +187,10 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
+              <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+                <span class="material-symbols-outlined flex-shrink-0 text-2xl">storefront</span>
+                <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
+            </a>
         </nav>
         
         <div class="p-3 border-t border-[var(--border-color)]">
@@ -177,7 +208,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Laporan Penjualan</h2></div>
+                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Laporan & Statistik</h2></div>
             </div>
             
             <div class="flex items-center gap-4 relative">
@@ -244,14 +275,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     <label class="block text-[10px] font-bold text-stone-400 uppercase mb-1">Sampai Tanggal</label>
                     <input type="date" name="end_date" value="<?= $end_date ?>" class="px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-none text-sm focus:ring-1 focus:ring-[var(--warm-tan)]">
                 </div>
-                <button type="submit" class="px-6 py-2.5 bg-[var(--deep-forest)] text-white rounded-xl text-sm font-bold hover:bg-[var(--chocolate-brown)] transition-colors shadow-lg">Filter</button>
+                <button type="submit" class="px-6 py-2.5 bg-[var(--deep-forest)] text-white rounded-xl text-sm font-bold hover:bg-[var(--chocolate-brown)] transition-colors shadow-lg">Filter Data</button>
             </form>
 
             <div class="flex gap-2">
                 <button onclick="exportTableToExcel('reportTable', 'Laporan_Penjualan_<?= date('Ymd') ?>')" class="px-6 py-3 bg-green-600 text-white rounded-2xl text-sm font-bold hover:bg-green-700 transition-colors shadow-lg flex items-center gap-2">
                     <span class="material-symbols-outlined text-lg">table_view</span> Excel
                 </button>
-                
                 <a href="export_pdf.php?start_date=<?= $start_date ?>&end_date=<?= $end_date ?>" target="_blank" class="px-6 py-3 bg-red-600 text-white rounded-2xl text-sm font-bold hover:bg-red-700 transition-colors shadow-lg flex items-center gap-2">
                     <span class="material-symbols-outlined text-lg">picture_as_pdf</span> PDF
                 </a>
@@ -288,7 +318,27 @@ $total_notif = $total_new_orders + $total_unread_chat;
             </div>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" data-aos="fade-up" data-aos-delay="200">
+            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow">
+                <h4 class="text-sm font-bold text-[var(--text-dark)] uppercase mb-4 tracking-wider flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg text-[var(--warm-tan)]">trending_up</span> Tren Pendapatan
+                </h4>
+                <div class="h-64">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow">
+                <h4 class="text-sm font-bold text-[var(--text-dark)] uppercase mb-4 tracking-wider flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg text-[var(--warm-tan)]">pie_chart</span> 5 Buku Terlaris
+                </h4>
+                <div class="h-64 flex justify-center">
+                    <canvas id="productsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow overflow-hidden" data-aos="fade-up" data-aos-delay="300">
             <h3 class="text-xl font-bold text-[var(--text-dark)] mb-6 title-font">Rincian Transaksi</h3>
             <div class="overflow-x-auto">
                 <table id="reportTable" class="w-full text-left border-collapse">
@@ -367,7 +417,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
         }
     }
 
-    // EXPORT TO EXCEL FUNCTION (Client Side)
+    // Export Excel
     function exportTableToExcel(tableID, filename = ''){
         var downloadLink;
         var dataType = 'application/vnd.ms-excel';
@@ -375,7 +425,6 @@ $total_notif = $total_new_orders + $total_unread_chat;
         var tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
         
         filename = filename ? filename + '.xls' : 'excel_data.xls';
-        
         downloadLink = document.createElement("a");
         document.body.appendChild(downloadLink);
         
@@ -388,6 +437,69 @@ $total_notif = $total_new_orders + $total_unread_chat;
             downloadLink.click();
         }
     }
+
+    // --- CHART.JS CONFIGURATION ---
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const productsCtx = document.getElementById('productsChart').getContext('2d');
+
+    // Data dari PHP
+    const chartDates = <?= $json_dates ?>;
+    const chartRevenues = <?= $json_revenues ?>;
+    const chartBooks = <?= $json_books ?>;
+    const chartQtys = <?= $json_qtys ?>;
+
+    // Line Chart (Pendapatan)
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: chartDates,
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: chartRevenues,
+                borderColor: '#3E4B1C', // Deep Forest
+                backgroundColor: 'rgba(62, 75, 28, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointBackgroundColor: '#B18143', // Warm Tan
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Doughnut Chart (Buku Terlaris)
+    new Chart(productsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartBooks,
+            datasets: [{
+                data: chartQtys,
+                backgroundColor: [
+                    '#3E4B1C', // Deep Forest
+                    '#B18143', // Warm Tan
+                    '#663F05', // Chocolate
+                    '#DCE3AC', // Light Sage
+                    '#A8A29E'  // Stone Gray
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+            }
+        }
+    });
 </script>
 
 </body>
