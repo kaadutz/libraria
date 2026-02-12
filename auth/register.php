@@ -129,7 +129,8 @@ if (isset($_POST['register'])) {
                         $message = "Terjadi kesalahan: Email atau NIK sudah terdaftar di sistem.";
                     } else {
                         $message = "Terjadi kesalahan sistem database.";
-                        $error_details = mysqli_error($conn);
+                        // XSS Prevention: Escape error details
+                        $error_details = htmlspecialchars(mysqli_error($conn), ENT_QUOTES, 'UTF-8');
                     }
                 }
             }

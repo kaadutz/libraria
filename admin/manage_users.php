@@ -66,7 +66,9 @@ if (isset($_POST['add_seller'])) {
             if(strpos($error, 'Duplicate entry') !== false) {
                 $alert = "<script>alert('GAGAL: Data duplikat terdeteksi di database.');</script>";
             } else {
-                $alert = "<script>alert('Error Database: $error');</script>";
+                // XSS Prevention: Escape error message in JS context
+                $safe_error = htmlspecialchars($error, ENT_QUOTES, 'UTF-8');
+                $alert = "<script>alert('Error Database: $safe_error');</script>";
             }
         }
     }
@@ -116,7 +118,9 @@ if (isset($_POST['edit_user'])) {
             if(strpos($error, 'Duplicate entry') !== false) {
                 $alert = "<script>alert('GAGAL: Data duplikat terdeteksi di database.');</script>";
             } else {
-                $alert = "<script>alert('Gagal update data: $error');</script>";
+                // XSS Prevention: Escape error message in JS context
+                $safe_error = htmlspecialchars($error, ENT_QUOTES, 'UTF-8');
+                $alert = "<script>alert('Gagal update data: $safe_error');</script>";
             }
         }
     }

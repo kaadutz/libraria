@@ -41,33 +41,38 @@ while($msg = mysqli_fetch_assoc($q_msg_notif)){
     ];
 }
 
-// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+// B. Ambil 5 Status Pesanan Terakhir dengan Detail Lebih Lengkap
 $q_order_notif = mysqli_query($conn, "
-    SELECT invoice_number, status, order_date 
-    FROM orders 
-    WHERE buyer_id = '$buyer_id' 
-    AND status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
-    ORDER BY order_date DESC LIMIT 5
+    SELECT o.invoice_number, o.status, o.order_date, o.total_price,
+           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as total_items
+    FROM orders o
+    WHERE o.buyer_id = '$buyer_id'
+    AND o.status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
+    ORDER BY o.order_date DESC LIMIT 5
 ");
 
 while($ord = mysqli_fetch_assoc($q_order_notif)){
     $title = $ord['invoice_number'];
     $text = ""; $icon = ""; $color = "";
     
+    // Format mata uang & item
+    $price_fmt = number_format($ord['total_price'], 0, ',', '.');
+    $items_info = $ord['total_items'] . " Buku";
+
     if($ord['status'] == 'approved') {
-        $text = "Pesanan Diterima Penjual. Segera dikemas.";
+        $text = "Pesanan ($items_info) diterima Penjual. Segera dikemas.";
         $icon = "inventory_2"; $color = "indigo";
     } elseif($ord['status'] == 'shipping') {
-        $text = "Paket sedang dalam perjalanan.";
+        $text = "Paket ($items_info) sedang dalam perjalanan.";
         $icon = "local_shipping"; $color = "purple";
     } elseif($ord['status'] == 'rejected') {
-        $text = "Pesanan/Refund Ditolak oleh Penjual.";
+        $text = "Pesanan Rp $price_fmt ditolak/refund.";
         $icon = "cancel"; $color = "red";
     } elseif($ord['status'] == 'refunded') {
-        $text = "Pengajuan Refund Disetujui.";
+        $text = "Refund Rp $price_fmt disetujui.";
         $icon = "currency_exchange"; $color = "green";
     } elseif($ord['status'] == 'finished') {
-        $text = "Pesanan Selesai. Terima kasih!";
+        $text = "Selesai: $items_info telah diterima.";
         $icon = "check_circle"; $color = "teal";
     }
 
@@ -82,7 +87,7 @@ while($ord = mysqli_fetch_assoc($q_order_notif)){
     ];
 }
 
-// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+// Sort notifikasi berdasarkan waktu terbaru
 usort($notif_list, function($a, $b) {
     return $b['time'] - $a['time'];
 });
@@ -220,14 +225,24 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                             </div>
                             <div class="max-h-64 overflow-y-auto custom-scroll">
                                 <?php if(!empty($notif_list)): ?>
-                                    <?php foreach($notif_list as $n): ?>
+                                    <?php foreach($notif_list as $n):
+                                        // Hitung selisih waktu
+                                        $time_diff = time() - $n['time'];
+                                        if($time_diff < 60) $time_ago = "Baru saja";
+                                        elseif($time_diff < 3600) $time_ago = floor($time_diff/60) . " menit lalu";
+                                        elseif($time_diff < 86400) $time_ago = floor($time_diff/3600) . " jam lalu";
+                                        else $time_ago = floor($time_diff/86400) . " hari lalu";
+                                    ?>
                                     <a href="<?= $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50 last:border-0">
                                         <div class="p-2 bg-<?= $n['color'] ?>-100 text-<?= $n['color'] ?>-600 rounded-full shrink-0">
                                             <span class="material-symbols-outlined text-lg"><?= $n['icon'] ?></span>
                                         </div>
-                                        <div>
-                                            <p class="text-sm font-bold text-gray-800"><?= $n['title'] ?></p>
-                                            <p class="text-xs text-gray-500"><?= $n['text'] ?></p>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex justify-between items-center mb-0.5">
+                                                <p class="text-sm font-bold text-gray-800 truncate"><?= $n['title'] ?></p>
+                                                <span class="text-[9px] text-gray-400 whitespace-nowrap ml-2"><?= $time_ago ?></span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 line-clamp-2"><?= $n['text'] ?></p>
                                         </div>
                                     </a>
                                     <?php endforeach; ?>

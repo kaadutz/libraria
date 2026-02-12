@@ -87,11 +87,62 @@ while($row = mysqli_fetch_assoc($q_chart)) {
     $chart_data[$row['month'] - 1] = $row['total'];
 }
 
-// --- 4. LOGIKA NOTIFIKASI ---
+// --- 4. LOGIKA NOTIFIKASI PINTAR (GABUNGAN CHAT & PESANAN BARU) ---
+$notif_list = [];
+
+// A. Ambil Pesanan Baru (Pending/Waiting Approval)
+$q_new_orders = mysqli_query($conn, "
+    SELECT DISTINCT o.invoice_number, o.order_date, u.full_name as buyer_name
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN users u ON o.buyer_id = u.id
+    WHERE oi.seller_id = '$seller_id'
+    AND (o.status = 'pending' OR o.status = 'waiting_approval')
+    ORDER BY o.order_date DESC LIMIT 5
+");
+
+while($nord = mysqli_fetch_assoc($q_new_orders)){
+    $notif_list[] = [
+        'type' => 'order',
+        'title' => 'Pesanan Baru!',
+        'text' => $nord['buyer_name'] . ' memesan buku. Segera cek.',
+        'icon' => 'shopping_bag',
+        'color' => 'orange',
+        'link' => 'orders.php',
+        'time' => strtotime($nord['order_date'])
+    ];
+}
+
+// B. Ambil Pesan Belum Dibaca
+$q_msg_notif = mysqli_query($conn, "
+    SELECT m.*, u.full_name
+    FROM messages m
+    JOIN users u ON m.sender_id = u.id
+    WHERE m.receiver_id = '$seller_id' AND m.is_read = 0
+    ORDER BY m.created_at DESC
+");
+
+while($msg = mysqli_fetch_assoc($q_msg_notif)){
+    $notif_list[] = [
+        'type' => 'chat',
+        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+        'text' => substr($msg['message'], 0, 25) . '...',
+        'icon' => 'chat',
+        'color' => 'blue',
+        'link' => 'chat.php?uid=' . $msg['sender_id'],
+        'time' => strtotime($msg['created_at'])
+    ];
+}
+
+// Sort notifikasi
+usort($notif_list, function($a, $b) {
+    return $b['time'] - $a['time'];
+});
+
 $total_new_orders = $pending_count;
 $query_unread = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$seller_id' AND is_read = 0");
 $total_unread_chat = mysqli_fetch_assoc($query_unread)['total'];
-$total_notif = $total_new_orders + $total_unread_chat;
+$total_notif = count($notif_list);
 ?>
 
 <!DOCTYPE html>
@@ -238,28 +289,30 @@ $total_notif = $total_new_orders + $total_unread_chat;
                             <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold"><?= $total_notif ?> Baru</span>
                         <?php endif; ?>
                     </div>
-                    <div class="max-h-64 overflow-y-auto">
-                        <?php if($total_new_orders > 0): ?>
-                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
-                            <div class="p-2 bg-orange-100 text-orange-600 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">Pesanan Baru!</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu konfirmasi.</p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
-                        
-                        <?php if($total_unread_chat > 0): ?>
-                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
-                            <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">Pesan Masuk</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_unread_chat ?> pesan belum dibaca.</p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
-
-                        <?php if($total_notif == 0): ?>
+                    <div class="max-h-64 overflow-y-auto custom-scroll">
+                        <?php if(!empty($notif_list)): ?>
+                            <?php foreach($notif_list as $n):
+                                // Hitung selisih waktu
+                                $time_diff = time() - $n['time'];
+                                if($time_diff < 60) $time_ago = "Baru saja";
+                                elseif($time_diff < 3600) $time_ago = floor($time_diff/60) . " menit lalu";
+                                elseif($time_diff < 86400) $time_ago = floor($time_diff/3600) . " jam lalu";
+                                else $time_ago = floor($time_diff/86400) . " hari lalu";
+                            ?>
+                            <a href="<?= $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50 last:border-0">
+                                <div class="p-2 bg-<?= $n['color'] ?>-100 text-<?= $n['color'] ?>-600 rounded-full shrink-0">
+                                    <span class="material-symbols-outlined text-lg"><?= $n['icon'] ?></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <p class="text-sm font-bold text-gray-800 truncate"><?= $n['title'] ?></p>
+                                        <span class="text-[9px] text-gray-400 whitespace-nowrap ml-2"><?= $time_ago ?></span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 line-clamp-2"><?= $n['text'] ?></p>
+                                </div>
+                            </a>
+                            <?php endforeach; ?>
+                        <?php else: ?>
                             <div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div>
                         <?php endif; ?>
                     </div>

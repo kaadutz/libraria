@@ -64,7 +64,8 @@ if (isset($_POST['add_product'])) {
             header("Location: products.php?status=success_add");
             exit;
         } else {
-            $toast_message = "Error Database: " . mysqli_error($conn);
+            // XSS Prevention: Escape error message
+            $toast_message = "Error Database: " . htmlspecialchars(mysqli_error($conn), ENT_QUOTES, 'UTF-8');
             $toast_type = "error";
         }
     }
