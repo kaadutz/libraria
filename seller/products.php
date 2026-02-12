@@ -22,6 +22,9 @@ $total_unread_chat = mysqli_fetch_assoc($query_unread)['total'];
 
 $total_notif = $total_new_orders + $total_unread_chat;
 
+// Variabel Toast
+$toast_message = "";
+$toast_type = "";
 
 // --- 2. LOGIKA CRUD PRODUK ---
 
@@ -35,27 +38,35 @@ if (isset($_POST['add_product'])) {
     $stock       = mysqli_real_escape_string($conn, $_POST['stock']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
     
-    $image = NULL;
-    if (!empty($_FILES['image']['name'])) {
-        $target_dir = "../assets/uploads/books/";
-        if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-        
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        $new_name = "book_" . time() . "_" . uniqid() . "." . $ext;
-        
-        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $new_name);
-            $image = $new_name;
-        }
-    }
-
-    $query = "INSERT INTO books (seller_id, category_id, title, author, description, image, stock, cost_price, sell_price) 
-              VALUES ('$seller_id', '$category_id', '$title', '$author', '$description', '$image', '$stock', '$cost_price', '$sell_price')";
+    // VALIDASI DUPLIKAT
+    $check_duplicate = mysqli_query($conn, "SELECT id FROM books WHERE title = '$title' AND seller_id = '$seller_id'");
     
-    if (mysqli_query($conn, $query)) {
-        $alert = "<script>alert('Produk Berhasil Ditambahkan!'); window.location='products.php';</script>";
+    if (mysqli_num_rows($check_duplicate) > 0) {
+        $toast_message = "Gagal: Judul buku sudah ada di toko Anda!";
+        $toast_type = "error";
     } else {
-        $alert = "<script>alert('Gagal menambah produk: " . mysqli_error($conn) . "');</script>";
+        $image = NULL;
+        if (!empty($_FILES['image']['name'])) {
+            $target_dir = "../assets/uploads/books/";
+            if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
+            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            $new_name = "book_" . time() . "_" . uniqid() . "." . $ext;
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $new_name);
+                $image = $new_name;
+            }
+        }
+
+        $query = "INSERT INTO books (seller_id, category_id, title, author, description, image, stock, cost_price, sell_price) 
+                  VALUES ('$seller_id', '$category_id', '$title', '$author', '$description', '$image', '$stock', '$cost_price', '$sell_price')";
+        
+        if (mysqli_query($conn, $query)) {
+            header("Location: products.php?status=success_add");
+            exit;
+        } else {
+            $toast_message = "Error Database: " . mysqli_error($conn);
+            $toast_type = "error";
+        }
     }
 }
 
@@ -70,42 +81,61 @@ if (isset($_POST['edit_product'])) {
     $stock       = mysqli_real_escape_string($conn, $_POST['stock']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
 
-    $img_sql = "";
-    if (!empty($_FILES['image']['name'])) {
-        $target_dir = "../assets/uploads/books/";
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        $new_name = "book_" . time() . "_" . uniqid() . "." . $ext;
-        
-        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $new_name);
-            $img_sql = ", image='$new_name'";
+    // VALIDASI DUPLIKAT SAAT EDIT
+    $check_duplicate = mysqli_query($conn, "SELECT id FROM books WHERE title = '$title' AND seller_id = '$seller_id' AND id != '$id'");
+
+    if (mysqli_num_rows($check_duplicate) > 0) {
+        $toast_message = "Gagal: Judul buku sudah digunakan produk lain!";
+        $toast_type = "error";
+    } else {
+        $img_sql = "";
+        if (!empty($_FILES['image']['name'])) {
+            $target_dir = "../assets/uploads/books/";
+            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            $new_name = "book_" . time() . "_" . uniqid() . "." . $ext;
             
-            $old_image = $_POST['old_image'];
-            if ($old_image && file_exists($target_dir . $old_image)) {
-                unlink($target_dir . $old_image);
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $new_name);
+                $img_sql = ", image='$new_name'";
+                $old_image = $_POST['old_image'];
+                if ($old_image && file_exists($target_dir . $old_image)) {
+                    unlink($target_dir . $old_image);
+                }
             }
         }
-    }
 
-    $query = "UPDATE books SET title='$title', author='$author', category_id='$category_id', cost_price='$cost_price', 
-              sell_price='$sell_price', stock='$stock', description='$description' $img_sql 
-              WHERE id='$id' AND seller_id='$seller_id'";
-              
-    if (mysqli_query($conn, $query)) {
-        $alert = "<script>alert('Produk Berhasil Diperbarui!'); window.location='products.php';</script>";
+        $query = "UPDATE books SET title='$title', author='$author', category_id='$category_id', cost_price='$cost_price', 
+                  sell_price='$sell_price', stock='$stock', description='$description' $img_sql 
+                  WHERE id='$id' AND seller_id='$seller_id'";
+                  
+        if (mysqli_query($conn, $query)) {
+            header("Location: products.php?status=success_edit");
+            exit;
+        }
     }
 }
 
-// HAPUS PRODUK
+// HAPUS PRODUK (DENGAN CEK STOK)
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
-    $q = mysqli_query($conn, "SELECT image FROM books WHERE id='$id' AND seller_id='$seller_id'");
-    $data = mysqli_fetch_assoc($q);
-    if ($data['image'] && file_exists("../assets/uploads/books/" . $data['image'])) {
-        unlink("../assets/uploads/books/" . $data['image']);
+    
+    // Cek Stok Dulu
+    $check_stock = mysqli_query($conn, "SELECT stock, image FROM books WHERE id='$id' AND seller_id='$seller_id'");
+    $data = mysqli_fetch_assoc($check_stock);
+
+    if ($data['stock'] > 0) {
+        // Gagal Hapus karena stok masih ada
+        header("Location: products.php?status=error_stock_exists");
+        exit;
+    } else {
+        // Proses Hapus
+        if ($data['image'] && file_exists("../assets/uploads/books/" . $data['image'])) {
+            unlink("../assets/uploads/books/" . $data['image']);
+        }
+        mysqli_query($conn, "DELETE FROM books WHERE id='$id' AND seller_id='$seller_id'");
+        header("Location: products.php?status=success_delete");
+        exit;
     }
-    mysqli_query($conn, "DELETE FROM books WHERE id='$id' AND seller_id='$seller_id'");
-    $alert = "<script>alert('Produk Dihapus!'); window.location='products.php';</script>";
 }
 
 // --- 3. DATA PRODUK & PAGINATION ---
@@ -122,9 +152,9 @@ $books = mysqli_query($conn, "
     FROM books b 
     JOIN categories c ON b.category_id = c.id 
     WHERE b.seller_id = '$seller_id' 
-    ORDER BY b.created_at DESC 
+    ORDER BY b.stock ASC, b.created_at DESC 
     LIMIT $start, $limit
-");
+"); // Added Order by Stock ASC biar yg kosong muncul diatas
 $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 ?>
 
@@ -158,11 +188,16 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
     
-    /* --- PERBAIKAN 1: Menambahkan CSS Mask agar border-radius tidak berkedip --- */
     .fix-mask {
         -webkit-mask-image: -webkit-radial-gradient(white, black);
         mask-image: radial-gradient(white, black);
     }
+    
+    /* Toast Animation */
+    @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .toast-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .toast-exit { animation: fadeOut 0.4s ease forwards; }
 
     #sidebar, #main-content, #sidebar-logo, .sidebar-text-wrapper, .menu-text { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     #sidebar-header { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
@@ -181,7 +216,8 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 </style>
 </head>
 <body class="overflow-x-hidden">
-    <?= isset($alert) ? $alert : '' ?>
+
+<div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3"></div>
 
 <div class="flex min-h-screen">
     
@@ -234,6 +270,10 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
+            <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+                <span class="material-symbols-outlined flex-shrink-0 text-2xl">storefront</span>
+                <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
+            </a>
         </nav>
         
         <div class="p-3 border-t border-[var(--border-color)]">
@@ -263,10 +303,8 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
                         <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
-                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
                     <?php endif; ?>
                 </button>
-
                 <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                     <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
                         <h4 class="font-bold text-[var(--deep-forest)]">Notifikasi</h4>
@@ -327,18 +365,24 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 <?php while($book = mysqli_fetch_assoc($books)): 
                     $img_src = !empty($book['image']) ? "../assets/uploads/books/".$book['image'] : "../assets/images/book_placeholder.png";
                     $author = !empty($book['author']) ? $book['author'] : 'Penulis Tidak Diketahui'; 
+                    
+                    // --- LOGIKA TAMPILAN STOK HABIS ---
+                    $is_out_of_stock = ($book['stock'] <= 0);
+                    $card_style = $is_out_of_stock ? "border-red-200 opacity-90" : "border-[var(--border-color)]";
+                    $bg_badge = $is_out_of_stock ? "bg-red-500 text-white" : "bg-white/90 backdrop-blur text-[var(--deep-forest)]";
                 ?>
-                <div class="bg-white rounded-[2rem] border border-[var(--border-color)] card-shadow group relative flex flex-col h-full hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden fix-mask">
+                <div class="bg-white rounded-[2rem] border <?= $card_style ?> card-shadow group relative flex flex-col h-full hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden fix-mask">
                     
                     <div class="relative aspect-[3/4] bg-[var(--cream-bg)] overflow-hidden">
-                        <span class="absolute top-4 left-4 z-10 px-3 py-1 bg-white/90 backdrop-blur text-[var(--deep-forest)] rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
-                            <?= $book['category_name'] ?>
+                        
+                        <span class="absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border border-transparent <?= $bg_badge ?>">
+                            <?= $is_out_of_stock ? "STOK HABIS" : $book['category_name'] ?>
                         </span>
 
-                        <img src="<?= $img_src ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                        <img src="<?= $img_src ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 <?= $is_out_of_stock ? 'grayscale-[0.5]' : '' ?>">
                         
                         <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
-                            <p class="text-white text-xs font-bold flex items-center gap-1">
+                            <p class="<?= $is_out_of_stock ? 'text-red-300' : 'text-white' ?> text-xs font-bold flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm">inventory_2</span> Stok: <?= $book['stock'] ?>
                             </p>
                         </div>
@@ -361,16 +405,26 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                         <div class="mt-auto pt-4 border-t border-dashed border-[var(--border-color)] flex items-center gap-2">
                             
                             <a href="product_detail.php?id=<?= $book['id'] ?>" class="flex-1 py-2 bg-[var(--light-sage)]/20 text-[var(--deep-forest)] rounded-xl font-bold text-xs flex items-center justify-center gap-1 hover:bg-[var(--deep-forest)] hover:text-white transition-all">
-                                <span class="material-symbols-outlined text-base">visibility</span> Detail
+                                <span class="material-symbols-outlined text-base">visibility</span>
                             </a>
 
-                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($book)) ?>)" class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all" title="Edit">
-                                <span class="material-symbols-outlined text-lg">edit</span>
+                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($book)) ?>)" 
+                                    class="w-full flex-1 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all <?= $is_out_of_stock ? 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white ring-2 ring-green-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' ?>" 
+                                    title="<?= $is_out_of_stock ? 'Isi Stok Sekarang' : 'Edit Produk' ?>">
+                                <span class="material-symbols-outlined text-base"><?= $is_out_of_stock ? 'add_box' : 'edit' ?></span>
+                                <?= $is_out_of_stock ? 'Isi Stok' : 'Edit' ?>
                             </button>
 
-                            <a href="?delete=<?= $book['id'] ?>" onclick="return confirm('Hapus produk ini?')" class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all" title="Hapus">
-                                <span class="material-symbols-outlined text-lg">delete</span>
-                            </a>
+                            <?php if ($is_out_of_stock): ?>
+                                <a href="?delete=<?= $book['id'] ?>" onclick="return confirm('Stok habis. Hapus produk ini permanen?')" class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm" title="Hapus">
+                                    <span class="material-symbols-outlined text-lg">delete</span>
+                                </a>
+                            <?php else: ?>
+                                <button onclick="showToast('Habiskan stok dulu sebelum menghapus!', 'error')" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center cursor-not-allowed" title="Habiskan Stok Dulu">
+                                    <span class="material-symbols-outlined text-lg">delete_forever</span>
+                                </button>
+                            <?php endif; ?>
+
                         </div>
                     </div>
                 </div>
@@ -472,11 +526,15 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
     function toggleSidebar() {
         if (isSidebarOpen) {
-            sidebar.classList.remove('w-64'); sidebar.classList.add('w-20', 'sidebar-collapsed');
-            mainDiv.classList.remove('ml-64'); mainDiv.classList.add('ml-20');
+            sidebar.classList.remove('w-64');
+            sidebar.classList.add('w-20', 'sidebar-collapsed');
+            mainDiv.classList.remove('ml-64');
+            mainDiv.classList.add('ml-20');
         } else {
-            sidebar.classList.remove('w-20', 'sidebar-collapsed'); sidebar.classList.add('w-64');
-            mainDiv.classList.remove('ml-20'); mainDiv.classList.add('ml-64');
+            sidebar.classList.remove('w-20', 'sidebar-collapsed');
+            sidebar.classList.add('w-64');
+            mainDiv.classList.remove('ml-20');
+            mainDiv.classList.add('ml-64');
         }
         isSidebarOpen = !isSidebarOpen;
     }
@@ -494,6 +552,35 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
             dropdowns.forEach(dd => dd.classList.add('hidden'));
         }
     }
+
+    // --- TOAST FUNCTION ---
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-[var(--deep-forest)]' : 'bg-red-600';
+        const icon = type === 'success' ? 'check_circle' : 'error';
+
+        toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95 transform transition-all duration-300 hover:scale-105`;
+        toast.innerHTML = `<span class="material-symbols-outlined text-2xl">${icon}</span><p class="text-sm font-bold">${message}</p>`;
+        
+        toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); };
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); } }, 4000);
+    }
+
+    // Check for PHP Status Messages (URL Params)
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    if (status === 'success_add') showToast('Produk berhasil ditambahkan!', 'success');
+    if (status === 'success_edit') showToast('Produk berhasil diperbarui!', 'success');
+    if (status === 'success_delete') showToast('Produk berhasil dihapus!', 'success');
+    if (status === 'error_stock_exists') showToast('Gagal hapus: Habiskan stok terlebih dahulu!', 'error');
+
+    // Check for PHP Error Variables (Injected via PHP)
+    <?php if(!empty($toast_message)): ?>
+        showToast("<?= $toast_message ?>", "<?= $toast_type ?>");
+    <?php endif; ?>
+
 
     function toggleModal(modalID) {
         const modal = document.getElementById(modalID);
