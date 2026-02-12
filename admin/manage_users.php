@@ -36,29 +36,89 @@ if (isset($_POST['add_seller'])) {
     $nik       = mysqli_real_escape_string($conn, $_POST['nik']);
     $password  = $_POST['password']; 
     
-    $check = mysqli_query($conn, "SELECT * FROM users WHERE email = '$email' OR nik = '$nik'");
-    if (mysqli_num_rows($check) > 0) {
-        $alert = "<script>alert('GAGAL: Email atau NIK sudah terdaftar!');</script>";
+    // Validasi 1: Cek Email Duplikat
+    $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email'");
+    
+    // Validasi 2: Cek NIK Duplikat (Hanya jika NIK diisi)
+    $nik_duplicate = false;
+    if(!empty($nik)) {
+        $check_nik = mysqli_query($conn, "SELECT id FROM users WHERE nik = '$nik'");
+        if(mysqli_num_rows($check_nik) > 0) {
+            $nik_duplicate = true;
+        }
+    }
+
+    if (mysqli_num_rows($check_email) > 0) {
+        $alert = "<script>alert('GAGAL: Email sudah terdaftar! Gunakan email lain.');</script>";
+    } elseif ($nik_duplicate) {
+        $alert = "<script>alert('GAGAL: NIK sudah terdaftar! Periksa kembali data NIK.');</script>";
     } else {
-        $query = "INSERT INTO users (full_name, email, nik, password, role) VALUES ('$full_name', '$email', '$nik', '$password', 'seller')";
+        // Jika NIK kosong, masukkan NULL agar tidak bentrok dengan UNIQUE KEY
+        $nik_val = empty($nik) ? "NULL" : "'$nik'";
+        
+        $query = "INSERT INTO users (full_name, email, nik, password, role) VALUES ('$full_name', '$email', $nik_val, '$password', 'seller')";
+        
         if (mysqli_query($conn, $query)) {
             $alert = "<script>alert('Penjual Berhasil Ditambahkan!'); window.location='manage_users.php';</script>";
         } else {
-            $alert = "<script>alert('Error Database!');</script>";
+            // Tangkap error MySQL (misal kode 1062 untuk duplicate entry)
+            $error = mysqli_error($conn);
+            if(strpos($error, 'Duplicate entry') !== false) {
+                $alert = "<script>alert('GAGAL: Data duplikat terdeteksi di database.');</script>";
+            } else {
+                $alert = "<script>alert('Error Database: $error');</script>";
+            }
         }
     }
 }
 
-// 2. EDIT USER (HANYA NAMA)
+// 2. EDIT USER (UPDATE SEMUA DATA)
 if (isset($_POST['edit_user'])) {
     $id        = $_POST['id'];
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
+    $email     = mysqli_real_escape_string($conn, $_POST['email']);
+    $nik       = mysqli_real_escape_string($conn, $_POST['nik']);
+    $role      = mysqli_real_escape_string($conn, $_POST['role']);
+    $address   = mysqli_real_escape_string($conn, $_POST['address']);
+    $password  = $_POST['password'];
+
+    // Cek duplikat email KECUALI milik user ini sendiri
+    $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email='$email' AND id != '$id'");
     
-    $query = "UPDATE users SET full_name='$full_name' WHERE id='$id'";
-    if(mysqli_query($conn, $query)) {
-        $alert = "<script>alert('Nama Pengguna Diperbarui!'); window.location='manage_users.php';</script>";
+    // Cek duplikat NIK KECUALI milik user ini sendiri (hanya jika NIK diisi)
+    $nik_duplicate = false;
+    if(!empty($nik)) {
+        $check_nik = mysqli_query($conn, "SELECT id FROM users WHERE nik='$nik' AND id != '$id'");
+        if(mysqli_num_rows($check_nik) > 0) {
+            $nik_duplicate = true;
+        }
+    }
+    
+    if(mysqli_num_rows($check_email) > 0){
+        $alert = "<script>alert('GAGAL: Email sudah digunakan user lain!');</script>";
+    } elseif ($nik_duplicate) {
+        $alert = "<script>alert('GAGAL: NIK sudah digunakan user lain!');</script>";
     } else {
-        $alert = "<script>alert('Gagal update data!');</script>";
+        // Siapkan nilai NIK untuk query (NULL jika kosong)
+        $nik_val = empty($nik) ? "NULL" : "'$nik'";
+
+        // Cek apakah password diubah
+        if(!empty($password)){
+            $query = "UPDATE users SET full_name='$full_name', email='$email', nik=$nik_val, role='$role', address='$address', password='$password' WHERE id='$id'";
+        } else {
+            $query = "UPDATE users SET full_name='$full_name', email='$email', nik=$nik_val, role='$role', address='$address' WHERE id='$id'";
+        }
+
+        if(mysqli_query($conn, $query)) {
+            $alert = "<script>alert('Data Pengguna Berhasil Diperbarui!'); window.location='manage_users.php';</script>";
+        } else {
+            $error = mysqli_error($conn);
+            if(strpos($error, 'Duplicate entry') !== false) {
+                $alert = "<script>alert('GAGAL: Data duplikat terdeteksi di database.');</script>";
+            } else {
+                $alert = "<script>alert('Gagal update data: $error');</script>";
+            }
+        }
     }
 }
 
@@ -148,7 +208,6 @@ if(isset($_SESSION['user_id'])){
 
 <div class="flex min-h-screen">
     
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -183,10 +242,8 @@ if(isset($_SESSION['user_id'])){
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
         
-        <!-- NAVBAR -->
         <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -213,7 +270,6 @@ if(isset($_SESSION['user_id'])){
             </div>
         </header>
 
-        <!-- STATS CARDS -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-aos="fade-up">
             <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
                 <div class="w-12 h-12 rounded-full bg-[var(--light-sage)]/40 flex items-center justify-center text-[var(--deep-forest)]"><span class="material-symbols-outlined text-2xl">group</span></div>
@@ -233,7 +289,6 @@ if(isset($_SESSION['user_id'])){
             </div>
         </div>
 
-        <!-- USER CARDS GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-aos="fade-up" data-aos-delay="100">
             <?php while($usr = mysqli_fetch_assoc($users)): 
                 $is_online = false;
@@ -245,10 +300,8 @@ if(isset($_SESSION['user_id'])){
             
             <div class="bg-white rounded-[2.5rem] p-6 border border-[var(--border-color)] card-shadow hover:shadow-lg transition-all group relative overflow-hidden">
                 
-                <!-- FIX: Pointer Events None pada Background agar tidak menutupi tombol -->
                 <div class="absolute top-0 right-0 w-24 h-24 bg-[var(--light-sage)]/20 rounded-bl-[3rem] transition-all group-hover:scale-110 pointer-events-none z-0"></div>
                 
-                <!-- FIX: Relative Z-10 agar konten berada di atas background -->
                 <div class="flex items-start justify-between mb-6 relative z-10">
                     <div class="flex items-center gap-4">
                         <img src="<?= $user_pic ?>" class="w-16 h-16 rounded-2xl object-cover shadow-sm border border-stone-100 bg-stone-100" onerror="this.src='../assets/images/logo.png'">
@@ -260,9 +313,10 @@ if(isset($_SESSION['user_id'])){
                         </div>
                     </div>
                     
-                    <!-- Actions (Sekarang pasti bisa diklik) -->
                     <div class="flex gap-2">
-                        <button type="button" onclick="openEditModal('<?= $usr['id'] ?>', '<?= htmlspecialchars($usr['full_name'], ENT_QUOTES) ?>')" class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-[var(--warm-tan)] hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
+                        <button type="button" 
+                                onclick="openEditModal('<?= $usr['id'] ?>', '<?= htmlspecialchars($usr['full_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['nik'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['role'], ENT_QUOTES) ?>', `<?= htmlspecialchars($usr['address'], ENT_QUOTES) ?>`)" 
+                                class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-[var(--warm-tan)] hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
                         
@@ -309,7 +363,6 @@ if(isset($_SESSION['user_id'])){
             <?php endwhile; ?>
         </div>
 
-        <!-- PAGINATION -->
         <div class="mt-8 flex justify-center items-center gap-4">
             <?php if($page > 1): ?>
                 <a href="?page=<?= $page - 1 ?>" class="px-4 py-2 bg-white border border-[var(--border-color)] rounded-xl hover:bg-[var(--cream-bg)] transition-colors text-sm font-bold text-[var(--deep-forest)] shadow-sm">Previous</a>
@@ -323,7 +376,6 @@ if(isset($_SESSION['user_id'])){
     </main>
 </div>
 
-<!-- Modal Add Seller -->
 <div id="addSellerModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="modal-overlay absolute w-full h-full bg-stone-900/60 backdrop-blur-sm" onclick="toggleModal('addSellerModal')"></div>
     <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300">
@@ -341,22 +393,52 @@ if(isset($_SESSION['user_id'])){
     </div>
 </div>
 
-<!-- Modal Edit User -->
 <div id="editUserModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="modal-overlay absolute w-full h-full bg-stone-900/60 backdrop-blur-sm" onclick="toggleModal('editUserModal')"></div>
-    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300">
+    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300 max-h-[90vh]">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold text-[var(--deep-forest)] title-font">Edit Nama Pengguna</h3>
+            <h3 class="text-2xl font-bold text-[var(--deep-forest)] title-font">Edit Data User</h3>
             <button onclick="toggleModal('editUserModal')" class="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-red-100 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-lg">close</span></button>
         </div>
         <form action="" method="POST" class="space-y-4">
             <input type="hidden" name="id" id="edit_id">
+            
             <div>
                 <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nama Lengkap / Toko</label>
                 <input type="text" name="full_name" id="edit_name" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
-                <p class="text-[10px] text-orange-500 mt-1 ml-1">*Anda hanya dapat mengubah nama.</p>
             </div>
-            <button type="submit" name="edit_user" class="w-full py-4 mt-4 bg-[var(--warm-tan)] text-white font-bold rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-lg">Update Nama</button>
+
+            <div>
+                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Email</label>
+                <input type="email" name="email" id="edit_email" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">NIK</label>
+                    <input type="text" name="nik" id="edit_nik" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Role</label>
+                    <select name="role" id="edit_role" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm">
+                        <option value="buyer">Buyer</option>
+                        <option value="seller">Seller</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Alamat</label>
+                <textarea name="address" id="edit_address" rows="2" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Reset Password</label>
+                <input type="password" name="password" placeholder="Kosongkan jika tidak ingin mengubah" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                <p class="text-[10px] text-orange-500 mt-1 ml-1">*Isi hanya jika ingin mereset password.</p>
+            </div>
+
+            <button type="submit" name="edit_user" class="w-full py-4 mt-4 bg-[var(--warm-tan)] text-white font-bold rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-lg">Update Data</button>
         </form>
     </div>
 </div>
@@ -402,9 +484,14 @@ if(isset($_SESSION['user_id'])){
         }
     }
 
-    function openEditModal(id, name) {
+    // Fungsi untuk mengisi form edit secara dinamis
+    function openEditModal(id, name, email, nik, role, address) {
         document.getElementById('edit_id').value = id;
         document.getElementById('edit_name').value = name;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_nik').value = nik;
+        document.getElementById('edit_role').value = role;
+        document.getElementById('edit_address').value = address;
         toggleModal('editUserModal');
     }
 </script>
