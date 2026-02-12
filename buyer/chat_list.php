@@ -11,13 +11,87 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 }
 
 $buyer_id = $_SESSION['user_id'];
+
+// --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
+$notif_list = [];
+
+// A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
+$q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
+while($msg = mysqli_fetch_assoc($q_msg_notif)){
+    $notif_list[] = [
+        'type' => 'chat',
+        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+        'text' => substr($msg['message'], 0, 25) . '...',
+        'icon' => 'chat',
+        'color' => 'blue',
+        'link' => 'chat_list.php',
+        'time' => strtotime($msg['created_at'])
+    ];
+}
+
+// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+$q_order_notif = mysqli_query($conn, "
+    SELECT invoice_number, status, order_date
+    FROM orders
+    WHERE buyer_id = '$buyer_id'
+    AND status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
+    ORDER BY order_date DESC LIMIT 5
+");
+
+while($ord = mysqli_fetch_assoc($q_order_notif)){
+    $title = $ord['invoice_number'];
+    $text = ""; $icon = ""; $color = "";
+
+    if($ord['status'] == 'approved') {
+        $text = "Pesanan Diterima Penjual. Segera dikemas.";
+        $icon = "inventory_2"; $color = "indigo";
+    } elseif($ord['status'] == 'shipping') {
+        $text = "Paket sedang dalam perjalanan.";
+        $icon = "local_shipping"; $color = "purple";
+    } elseif($ord['status'] == 'rejected') {
+        $text = "Pesanan/Refund Ditolak oleh Penjual.";
+        $icon = "cancel"; $color = "red";
+    } elseif($ord['status'] == 'refunded') {
+        $text = "Pengajuan Refund Disetujui.";
+        $icon = "currency_exchange"; $color = "green";
+    } elseif($ord['status'] == 'finished') {
+        $text = "Pesanan Selesai. Terima kasih!";
+        $icon = "check_circle"; $color = "teal";
+    }
+
+    $notif_list[] = [
+        'type' => 'order',
+        'title' => $title,
+        'text' => $text,
+        'icon' => $icon,
+        'color' => $color,
+        'link' => 'my_orders.php',
+        'time' => strtotime($ord['order_date'])
+    ];
+}
+
+// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+usort($notif_list, function($a, $b) {
+    return $b['time'] - $a['time'];
+});
+
+$total_notif = count($notif_list);
+
+// HITUNG ISI KERANJANG (If not already calculated)
+if(!isset($cart_count)) {
+    $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
+    $cart_data = mysqli_fetch_assoc($query_cart);
+    $cart_count = $cart_data['total'] ?? 0;
+}
+
+
 $buyer_name = $_SESSION['full_name'];
 
 // --- LOGIKA KIRIM PESAN ---
 if (isset($_POST['send_message'])) {
     $receiver_id = $_POST['receiver_id'];
     $message = mysqli_real_escape_string($conn, $_POST['message']);
-    
+
     if (!empty($message)) {
         $q_send = "INSERT INTO messages (sender_id, receiver_id, message, is_read, created_at) VALUES ('$buyer_id', '$receiver_id', '$message', 0, NOW())";
         mysqli_query($conn, $q_send);
@@ -44,15 +118,15 @@ $chat_list = mysqli_query($conn, $q_chats);
 $active_chat = null;
 if (isset($_GET['uid'])) {
     $chat_uid = mysqli_real_escape_string($conn, $_GET['uid']);
-    
+
     // Ambil Data Seller
     $q_seller = mysqli_query($conn, "SELECT * FROM users WHERE id = '$chat_uid'");
     if(mysqli_num_rows($q_seller) > 0) {
         $active_chat = mysqli_fetch_assoc($q_seller);
-        
+
         // Tandai pesan sudah dibaca
         mysqli_query($conn, "UPDATE messages SET is_read = 1 WHERE sender_id = '$chat_uid' AND receiver_id = '$buyer_id'");
-        
+
         // Ambil isi chat
         $q_msgs = mysqli_query($conn, "SELECT * FROM messages WHERE (sender_id = '$buyer_id' AND receiver_id = '$chat_uid') OR (sender_id = '$chat_uid' AND receiver_id = '$buyer_id') ORDER BY created_at ASC");
     }
@@ -84,105 +158,153 @@ $total_notif = $total_chat_unread;
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Chat - Libraria</title>
+<title>Chat - Libraria</title>
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700&family=Material+Icons+Outlined&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-    <style type="text/tailwindcss">
-        :root {
-            --deep-forest: #3E4B1C;
-            --chocolate-brown: #663F05;
-            --warm-tan: #B18143;
-            --light-sage: #DCE3AC;
-            --cream-bg: #FEF9E6;
-            --text-dark: #2D2418;
-            --text-muted: #6B6155;
-            --border-color: #E6E1D3;
-        }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
-        .font-logo { font-family: 'Cinzel', serif; }
-        
-        /* Chat Styling */
-        .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 1rem; position: relative; }
-        .chat-own { background-color: var(--deep-forest); color: white; border-bottom-right-radius: 0; margin-left: auto; }
-        .chat-other { background-color: white; border: 1px solid var(--border-color); border-bottom-left-radius: 0; color: var(--text-dark); }
-        
-        /* Scrollbar */
-        .chat-area::-webkit-scrollbar { width: 6px; }
-        .chat-area::-webkit-scrollbar-track { background: transparent; }
-        .chat-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3a5020",
+              "primary-light": "#537330",
+              "chocolate": "#633d0c",
+              "chocolate-light": "#8a5a1b",
+              "tan": "#b08144",
+              "sand": "#e6e2dd",
+              "sage": "#d1d6a7",
+              "sage-dark": "#aeb586",
+              "cream": "#fefbe9",
+              "background-light": "#fefbe9",
+              "background-dark": "#1a1c18",
+            },
+            fontFamily: {
+              display: ["DM Serif Display", "serif"],
+              sans: ["Inter", "sans-serif"],
+              logo: ["Cinzel", "serif"],
+            },
+            boxShadow: {
+                'card': '0 20px 40px -5px rgba(58, 80, 32, 0.08)',
+                'glow': '0 0 20px rgba(176, 129, 68, 0.4)',
+                'paper': '2px 4px 12px rgba(99, 61, 12, 0.08)',
+                'book-3d': '5px 5px 15px rgba(0,0,0,0.2), 10px 10px 25px rgba(0,0,0,0.1)',
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'DM Serif Display', serif; }
+        .material-icons-outlined, .material-symbols-outlined { vertical-align: middle; }
     </style>
+
 </head>
-<body class="overflow-x-hidden min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 transition-colors duration-500 antialiased selection:bg-tan selection:text-white overflow-x-hidden">
+
+
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
+        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
                     <div class="flex flex-col">
-                        <span class="text-xl font-bold text-[var(--deep-forest)] font-logo tracking-wide leading-none">LIBRARIA</span>
+                        <span class="text-xl font-bold text-primary dark:text-sage font-logo tracking-wide leading-none">LIBRARIA</span>
                     </div>
                 </a>
 
-                <div class="hidden md:flex flex-1 max-w-xl mx-auto"></div>
+                <div class="hidden md:flex flex-1 max-w-xl mx-auto">
+                    <form action="" method="GET" class="w-full relative group">
+                        <input type="text" name="s" placeholder="Cari buku, penulis..."
+                               value="<?php echo isset($_GET['s']) ? $_GET['s'] : '' ?>"
+                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
+                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 group-focus-within:text-tan text-lg">search</span>
+                    </form>
+                </div>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
-                        <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
-                        <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
-                        <a href="chat_list.php" class="px-3 py-2 rounded-xl bg-[var(--deep-forest)] text-white shadow-md transition-colors">Chat</a>
+                    <button onclick="toggleDarkMode()" class="w-10 h-10 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">
+                        <span class="material-icons-outlined text-xl">dark_mode</span>
+                    </button>
+
+                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-stone-600 dark:text-stone-400 mr-2">
+                        <a href="index.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Beranda</a>
+                        <a href="all_books.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Buku</a>
+                        <a href="my_orders.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Pesanan</a>
+                        <a href="chat_list.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Chat</a>
                     </div>
 
-                    <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all">
-                        <span class="material-symbols-outlined">help</span>
-                    </a>
-
                     <div class="relative">
-                        <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all relative">
+                        <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300 relative">
                             <span class="material-symbols-outlined">notifications</span>
-                            <?php if($total_notif > 0): ?><span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span><?php endif; ?>
+                            <?php if(isset($total_notif) && $total_notif > 0): ?>
+                                <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-stone-900 animate-ping"></span>
+                                <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-stone-900"></span>
+                            <?php endif; ?>
                         </button>
-                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                            <div class="px-4 py-3 border-b border-[var(--border-color)] flex justify-between items-center">
-                                <h4 class="font-bold text-[var(--deep-forest)] text-sm">Notifikasi</h4>
-                                <?php if($total_notif > 0): ?><span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold"><?= $total_notif ?> Baru</span><?php endif; ?>
+                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-80 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                            <div class="px-4 py-3 border-b border-tan/10 dark:border-stone-800 flex justify-between items-center">
+                                <h4 class="font-bold text-primary dark:text-sage text-sm">Notifikasi</h4>
+                                <?php if(isset($total_notif) && $total_notif > 0): ?><span class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold"><?php echo $total_notif ?> Baru</span><?php endif; ?>
                             </div>
-                            <div class="max-h-64 overflow-y-auto">
-                                <?php if($total_chat_unread > 0): ?>
-                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors">
-                                    <div class="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0"><span class="material-symbols-outlined text-lg">chat</span></div>
-                                    <div><p class="text-sm font-bold text-gray-800">Pesan Masuk</p><p class="text-xs text-gray-500">Anda memiliki <?= $total_chat_unread ?> pesan belum dibaca.</p></div>
-                                </a>
+                            <div class="max-h-64 overflow-y-auto custom-scroll">
+                                <?php if(isset($notif_list) && !empty($notif_list)): ?>
+                                    <?php foreach($notif_list as $n): ?>
+                                    <a href="<?php echo $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:hover:bg-stone-800 transition-colors border-b border-tan/10 dark:border-stone-800 last:border-0">
+                                        <div class="p-2 bg-<?php echo $n['color'] ?>-100 dark:bg-<?php echo $n['color'] ?>-900/30 text-<?php echo $n['color'] ?>-600 dark:text-<?php echo $n['color'] ?>-400 rounded-full shrink-0">
+                                            <span class="material-symbols-outlined text-lg"><?php echo $n['icon'] ?></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-stone-800 dark:text-stone-200"><?php echo $n['title'] ?></p>
+                                            <p class="text-xs text-stone-500 dark:text-stone-400"><?php echo $n['text'] ?></p>
+                                        </div>
+                                    </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-6 text-stone-400 text-xs italic">Tidak ada notifikasi baru.</div>
                                 <?php endif; ?>
-                                <?php if($total_notif == 0): ?><div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div><?php endif; ?>
                             </div>
                         </div>
                     </div>
 
-                    <a href="cart.php" class="relative w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border-color)] bg-white text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <a href="cart.php" class="relative w-10 h-10 flex items-center justify-center rounded-full border border-tan/20 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:text-primary dark:hover:text-sage hover:shadow-md transition-all">
                         <span class="material-symbols-outlined">shopping_bag</span>
-                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce <?= $cart_count > 0 ? '' : 'hidden' ?>"><?= $cart_count ?></span>
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white dark:border-stone-900 animate-bounce <?php echo (isset($cart_count) && $cart_count > 0) ? '' : 'hidden' ?>"><?php echo isset($cart_count) ? $cart_count : 0 ?></span>
                     </a>
 
                     <div class="relative ml-1">
-                        <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-transparent hover:bg-white hover:shadow-sm hover:border-[var(--border-color)] transition-all duration-300 focus:outline-none">
-                            <img src="<?= $profile_pic ?>" class="h-9 w-9 rounded-full object-cover border border-[var(--warm-tan)]">
+                        <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-transparent hover:bg-white dark:hover:bg-stone-800 hover:shadow-sm hover:border-tan/20 dark:hover:border-stone-700 transition-all duration-300 focus:outline-none">
+                            <img src="<?php echo isset($profile_pic) ? $profile_pic : '../assets/images/default_profile.png' ?>" class="h-9 w-9 rounded-full object-cover border border-tan dark:border-stone-600">
                             <div class="hidden md:block text-left">
-                                <p class="text-[10px] text-[var(--text-muted)] font-bold uppercase leading-none mb-0.5">Hi,</p>
-                                <p class="text-xs font-bold text-[var(--deep-forest)] leading-none truncate max-w-[80px]"><?= explode(' ', $buyer_name)[0] ?></p>
+                                <p class="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase leading-none mb-0.5">Hi,</p>
+                                <p class="text-xs font-bold text-primary dark:text-sage leading-none truncate max-w-[80px]"><?php echo isset($buyer_name) ? explode(' ', $buyer_name)[0] : 'User' ?></p>
                             </div>
-                            <span class="material-symbols-outlined text-[var(--text-muted)] text-sm hidden md:block">expand_more</span>
+                            <span class="material-symbols-outlined text-stone-500 dark:text-stone-400 text-sm hidden md:block">expand_more</span>
                         </button>
-                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                            <a href="profile.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm font-bold text-[var(--text-dark)]"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
-                            <div class="border-t border-[var(--border-color)] my-1"></div>
-                            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-sm font-bold text-red-600 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
+                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                            <div class="px-4 py-3 border-b border-tan/10 dark:border-stone-800 md:hidden">
+                                <p class="text-sm font-bold text-primary dark:text-sage"><?php echo isset($buyer_name) ? $buyer_name : 'User' ?></p>
+                            </div>
+                            <div class="lg:hidden border-b border-tan/10 dark:border-stone-800 pb-2 mb-2">
+                                <a href="index.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">home</span> Beranda</a>
+                                <a href="all_books.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">menu_book</span> Buku</a>
+                                <a href="my_orders.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">receipt_long</span> Pesanan</a>
+                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">chat</span> Chat</a>
+                            </div>
+                            <a href="profile.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm font-bold text-stone-800 dark:text-stone-200"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
+                            <a href="help.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm font-bold text-stone-800 dark:text-stone-200"><span class="material-symbols-outlined text-lg">help</span> Bantuan</a>
+                            <div class="border-t border-tan/10 dark:border-stone-800 my-1"></div>
+                            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-bold text-red-600 dark:text-red-400 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
                         </div>
                     </div>
                 </div>
@@ -190,20 +312,22 @@ $total_notif = $total_chat_unread;
         </div>
     </nav>
 
+
+
     <main class="flex-1 pt-32 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full h-[calc(100vh-2rem)]">
-        
-        <div class="bg-white rounded-[2.5rem] border border-[var(--border-color)] shadow-xl overflow-hidden h-full flex flex-col md:flex-row">
-            
-            <div class="w-full md:w-80 border-r border-[var(--border-color)] bg-gray-50/50 flex flex-col h-full <?= $active_chat ? 'hidden md:flex' : 'flex' ?>">
-                <div class="p-6 border-b border-[var(--border-color)] bg-white">
-                    <h2 class="text-xl font-bold text-[var(--deep-forest)]">Pesan</h2>
+
+        <div class="bg-white rounded-[2.5rem] border border-tan/20 dark:border-stone-800 shadow-xl overflow-hidden h-full flex flex-col md:flex-row">
+
+            <div class="w-full md:w-80 border-r border-tan/20 dark:border-stone-800 bg-gray-50/50 flex flex-col h-full <?= $active_chat ? 'hidden md:flex' : 'flex' ?>">
+                <div class="p-6 border-b border-tan/20 dark:border-stone-800 bg-white">
+                    <h2 class="text-xl font-bold text-primary dark:text-sage">Pesan</h2>
                 </div>
-                
+
                 <div class="flex-1 overflow-y-auto p-3 space-y-2">
                     <?php if(mysqli_num_rows($chat_list) > 0): ?>
-                        <?php while($chat = mysqli_fetch_assoc($chat_list)): 
+                        <?php while($chat = mysqli_fetch_assoc($chat_list)):
                             $c_img = !empty($chat['profile_image']) ? "../assets/uploads/profiles/".$chat['profile_image'] : "../assets/images/default_profile.png";
-                            $active = ($active_chat && $active_chat['id'] == $chat['id']) ? 'bg-[var(--light-sage)]/30 border-[var(--light-sage)]' : 'bg-white border-transparent hover:bg-gray-50';
+                            $active = ($active_chat && $active_chat['id'] == $chat['id']) ? 'bg-sage/30 border-[var(--light-sage)]' : 'bg-white border-transparent hover:bg-gray-50';
                         ?>
                         <a href="chat_list.php?uid=<?= $chat['id'] ?>" class="flex items-center gap-3 p-3 rounded-2xl border transition-all <?= $active ?>">
                             <div class="relative">
@@ -214,7 +338,7 @@ $total_notif = $total_chat_unread;
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-baseline mb-1">
-                                    <h4 class="font-bold text-sm text-[var(--text-dark)] truncate"><?= $chat['full_name'] ?></h4>
+                                    <h4 class="font-bold text-sm text-stone-800 dark:text-stone-200 truncate"><?= $chat['full_name'] ?></h4>
                                     <span class="text-[10px] text-gray-400"><?= date('H:i', strtotime($chat['last_time'])) ?></span>
                                 </div>
                                 <p class="text-xs text-gray-500 truncate"><?= $chat['last_msg'] ?></p>
@@ -231,26 +355,26 @@ $total_notif = $total_chat_unread;
             </div>
 
             <div class="flex-1 flex flex-col bg-[url('../assets/images/chat-bg.png')] bg-repeat h-full <?= $active_chat ? 'flex' : 'hidden md:flex' ?>">
-                
-                <?php if($active_chat): 
+
+                <?php if($active_chat):
                     $a_img = !empty($active_chat['profile_image']) ? "../assets/uploads/profiles/".$active_chat['profile_image'] : "../assets/images/default_profile.png";
                 ?>
-                    <div class="p-4 border-b border-[var(--border-color)] bg-white flex items-center gap-4 shadow-sm z-10">
-                        <a href="chat_list.php" class="md:hidden text-gray-500 hover:text-[var(--deep-forest)]">
+                    <div class="p-4 border-b border-tan/20 dark:border-stone-800 bg-white flex items-center gap-4 shadow-sm z-10">
+                        <a href="chat_list.php" class="md:hidden text-gray-500 hover:text-primary dark:text-sage">
                             <span class="material-symbols-outlined">arrow_back</span>
                         </a>
                         <img src="<?= $a_img ?>" class="w-10 h-10 rounded-full object-cover border border-gray-200">
                         <div>
-                            <h3 class="font-bold text-[var(--text-dark)]"><?= $active_chat['full_name'] ?></h3>
+                            <h3 class="font-bold text-stone-800 dark:text-stone-200"><?= $active_chat['full_name'] ?></h3>
                             <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Penjual</p>
                         </div>
                     </div>
 
                     <div class="flex-1 overflow-y-auto p-6 space-y-4 chat-area bg-white/50 backdrop-blur-sm" id="chatContainer">
-                        <?php 
-                        while($msg = mysqli_fetch_assoc($q_msgs)): 
+                        <?php
+                        while($msg = mysqli_fetch_assoc($q_msgs)):
                             $is_me = ($msg['sender_id'] == $buyer_id);
-                            
+
                             // --- SMART PRODUCT DETECTION (Agar tampil di history chat) ---
                             $product_card = "";
                             if (preg_match('/Halo kak, saya tertarik dengan buku \*(.*?)\*/', $msg['message'], $matches)) {
@@ -261,14 +385,14 @@ $total_notif = $total_chat_unread;
                                 if(mysqli_num_rows($q_book_check) > 0) {
                                     $b_data = mysqli_fetch_assoc($q_book_check);
                                     $b_img_chat = !empty($b_data['image']) ? "../assets/uploads/books/".$b_data['image'] : "../assets/images/book_placeholder.png";
-                                    
+
                                     $product_card = '
                                     <div class="mt-2 mb-1 p-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3 bg-white/90">
                                         <img src="'.$b_img_chat.'" class="w-12 h-16 object-cover rounded-md">
                                         <div class="text-left">
-                                            <p class="text-[10px] font-bold text-[var(--deep-forest)] uppercase">Produk Ditanyakan</p>
+                                            <p class="text-[10px] font-bold text-primary dark:text-sage uppercase">Produk Ditanyakan</p>
                                             <p class="text-xs font-bold text-gray-800 line-clamp-1">'.$b_data['title'].'</p>
-                                            <p class="text-xs text-[var(--chocolate-brown)] font-bold">Rp '.number_format($b_data['sell_price'],0,',','.').'</p>
+                                            <p class="text-xs text-chocolate dark:text-tan font-bold">Rp '.number_format($b_data['sell_price'],0,',','.').'</p>
                                         </div>
                                     </div>';
                                 }
@@ -289,20 +413,20 @@ $total_notif = $total_chat_unread;
                         <?php endwhile; ?>
                     </div>
 
-                    <div class="bg-white border-t border-[var(--border-color)] relative z-20">
-                        
-                        <?php if ($context_book): 
+                    <div class="bg-white border-t border-tan/20 dark:border-stone-800 relative z-20">
+
+                        <?php if ($context_book):
                             $b_img = !empty($context_book['image']) ? "../assets/uploads/books/".$context_book['image'] : "../assets/images/book_placeholder.png";
                         ?>
                         <div class="px-4 pt-4 pb-2 border-b border-dashed border-gray-200">
-                            <div class="flex items-center gap-3 p-3 bg-[var(--cream-bg)] rounded-xl border border-[var(--light-sage)] relative shadow-sm">
-                                <div class="w-12 h-16 bg-gray-200 rounded-lg overflow-hidden shrink-0 border border-[var(--border-color)]">
+                            <div class="flex items-center gap-3 p-3 bg-cream dark:bg-stone-800 rounded-xl border border-[var(--light-sage)] relative shadow-sm">
+                                <div class="w-12 h-16 bg-gray-200 rounded-lg overflow-hidden shrink-0 border border-tan/20 dark:border-stone-800">
                                     <img src="<?= $b_img ?>" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-[10px] text-[var(--deep-forest)] font-bold uppercase mb-0.5 tracking-wide">Bertanya Produk:</p>
-                                    <h4 class="text-sm font-bold text-[var(--text-dark)] truncate"><?= $context_book['title'] ?></h4>
-                                    <p class="text-xs text-[var(--chocolate-brown)] font-bold">Rp <?= number_format($context_book['sell_price'], 0, ',', '.') ?></p>
+                                    <p class="text-[10px] text-primary dark:text-sage font-bold uppercase mb-0.5 tracking-wide">Bertanya Produk:</p>
+                                    <h4 class="text-sm font-bold text-stone-800 dark:text-stone-200 truncate"><?= $context_book['title'] ?></h4>
+                                    <p class="text-xs text-chocolate dark:text-tan font-bold">Rp <?= number_format($context_book['sell_price'], 0, ',', '.') ?></p>
                                 </div>
                                 <a href="chat_list.php?uid=<?= $_GET['uid'] ?>" class="absolute top-2 right-2 text-stone-400 hover:text-red-500 p-1">
                                     <span class="material-symbols-outlined text-sm">close</span>
@@ -313,17 +437,17 @@ $total_notif = $total_chat_unread;
 
                         <form method="POST" class="p-4 flex gap-3 items-end">
                             <input type="hidden" name="receiver_id" value="<?= $active_chat['id'] ?>">
-                            
-                            <?php 
-                                $default_msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : ''; 
+
+                            <?php
+                                $default_msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : '';
                             ?>
-                            
+
                             <div class="flex-1 relative">
-                                <input type="text" name="message" value="<?= $default_msg ?>" placeholder="Tulis pesan..." class="w-full pl-4 pr-10 py-3 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm" autocomplete="off" autofocus>
-                                <span class="material-symbols-outlined absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-[var(--deep-forest)]">sentiment_satisfied</span>
+                                <input type="text" name="message" value="<?= $default_msg ?>" placeholder="Tulis pesan..." class="w-full pl-4 pr-10 py-3 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm" autocomplete="off" autofocus>
+                                <span class="material-symbols-outlined absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-primary dark:text-sage">sentiment_satisfied</span>
                             </div>
-                            
-                            <button type="submit" name="send_message" class="p-3 bg-[var(--deep-forest)] text-white rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-md active:scale-95 flex items-center justify-center">
+
+                            <button type="submit" name="send_message" class="p-3 bg-primary text-white rounded-xl hover:bg-chocolate transition-all shadow-md active:scale-95 flex items-center justify-center">
                                 <span class="material-symbols-outlined">send</span>
                             </button>
                         </form>
@@ -331,10 +455,10 @@ $total_notif = $total_chat_unread;
 
                 <?php else: ?>
                     <div class="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-60">
-                        <div class="w-32 h-32 bg-[var(--light-sage)]/30 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                            <span class="material-symbols-outlined text-6xl text-[var(--deep-forest)]">chat</span>
+                        <div class="w-32 h-32 bg-sage/30 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                            <span class="material-symbols-outlined text-6xl text-primary dark:text-sage">chat</span>
                         </div>
-                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] mb-2 font-logo">Mulai Percakapan</h3>
+                        <h3 class="text-2xl font-bold text-primary dark:text-sage mb-2 font-logo">Mulai Percakapan</h3>
                         <p class="text-gray-500 max-w-xs">Pilih percakapan dari daftar di sebelah kiri atau mulai chat baru dari halaman produk.</p>
                     </div>
                 <?php endif; ?>
@@ -366,5 +490,45 @@ $total_notif = $total_chat_unread;
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     </script>
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
+
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
+
 </body>
 </html>

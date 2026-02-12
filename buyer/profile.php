@@ -11,6 +11,80 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 }
 
 $buyer_id = $_SESSION['user_id'];
+
+// --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
+$notif_list = [];
+
+// A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
+$q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
+while($msg = mysqli_fetch_assoc($q_msg_notif)){
+    $notif_list[] = [
+        'type' => 'chat',
+        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+        'text' => substr($msg['message'], 0, 25) . '...',
+        'icon' => 'chat',
+        'color' => 'blue',
+        'link' => 'chat_list.php',
+        'time' => strtotime($msg['created_at'])
+    ];
+}
+
+// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+$q_order_notif = mysqli_query($conn, "
+    SELECT invoice_number, status, order_date
+    FROM orders
+    WHERE buyer_id = '$buyer_id'
+    AND status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
+    ORDER BY order_date DESC LIMIT 5
+");
+
+while($ord = mysqli_fetch_assoc($q_order_notif)){
+    $title = $ord['invoice_number'];
+    $text = ""; $icon = ""; $color = "";
+
+    if($ord['status'] == 'approved') {
+        $text = "Pesanan Diterima Penjual. Segera dikemas.";
+        $icon = "inventory_2"; $color = "indigo";
+    } elseif($ord['status'] == 'shipping') {
+        $text = "Paket sedang dalam perjalanan.";
+        $icon = "local_shipping"; $color = "purple";
+    } elseif($ord['status'] == 'rejected') {
+        $text = "Pesanan/Refund Ditolak oleh Penjual.";
+        $icon = "cancel"; $color = "red";
+    } elseif($ord['status'] == 'refunded') {
+        $text = "Pengajuan Refund Disetujui.";
+        $icon = "currency_exchange"; $color = "green";
+    } elseif($ord['status'] == 'finished') {
+        $text = "Pesanan Selesai. Terima kasih!";
+        $icon = "check_circle"; $color = "teal";
+    }
+
+    $notif_list[] = [
+        'type' => 'order',
+        'title' => $title,
+        'text' => $text,
+        'icon' => $icon,
+        'color' => $color,
+        'link' => 'my_orders.php',
+        'time' => strtotime($ord['order_date'])
+    ];
+}
+
+// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+usort($notif_list, function($a, $b) {
+    return $b['time'] - $a['time'];
+});
+
+$total_notif = count($notif_list);
+
+// HITUNG ISI KERANJANG (If not already calculated)
+if(!isset($cart_count)) {
+    $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
+    $cart_data = mysqli_fetch_assoc($query_cart);
+    $cart_count = $cart_data['total'] ?? 0;
+}
+
+
 $swal_alert = ""; // Variabel untuk menampung script SweetAlert
 
 // --- 2. LOGIC UPDATE PROFIL ---
@@ -22,7 +96,7 @@ if (isset($_POST['update_profile'])) {
 
     // CEK DUPLIKAT (Email atau NIK sudah dipakai orang lain?)
     $check = mysqli_query($conn, "SELECT id FROM users WHERE (email = '$email' OR nik = '$nik') AND id != '$buyer_id'");
-    
+
     if (mysqli_num_rows($check) > 0) {
         // JIKA DUPLIKAT -> MUNCUL POPUP ERROR
         $swal_alert = "
@@ -37,7 +111,7 @@ if (isset($_POST['update_profile'])) {
         </script>";
     } else {
         // JIKA AMAN -> LANJUT UPDATE
-        
+
         // Logic Upload Foto
         $img_sql = "";
         if (!empty($_FILES['profile_image']['name'])) {
@@ -46,7 +120,7 @@ if (isset($_POST['update_profile'])) {
 
             $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
             $new_name = "profile_" . $buyer_id . "_" . time() . "." . $ext;
-            
+
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                 move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
                 $img_sql = ", profile_image='$new_name'";
@@ -121,97 +195,153 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Profil Saya - Libraria</title>
+<title>Profil Saya - Libraria</title>
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700&family=Material+Icons+Outlined&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-    <style type="text/tailwindcss">
-        :root {
-            --deep-forest: #3E4B1C;
-            --chocolate-brown: #663F05;
-            --warm-tan: #B18143;
-            --light-sage: #DCE3AC;
-            --cream-bg: #FEF9E6;
-            --text-dark: #2D2418;
-            --text-muted: #6B6155;
-            --border-color: #E6E1D3;
-        }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
-        .font-logo { font-family: 'Cinzel', serif; }
-        .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
-        
-        /* Custom Font untuk SweetAlert */
-        .swal2-popup { font-family: 'Quicksand', sans-serif !important; border-radius: 1.5rem !important; }
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3a5020",
+              "primary-light": "#537330",
+              "chocolate": "#633d0c",
+              "chocolate-light": "#8a5a1b",
+              "tan": "#b08144",
+              "sand": "#e6e2dd",
+              "sage": "#d1d6a7",
+              "sage-dark": "#aeb586",
+              "cream": "#fefbe9",
+              "background-light": "#fefbe9",
+              "background-dark": "#1a1c18",
+            },
+            fontFamily: {
+              display: ["DM Serif Display", "serif"],
+              sans: ["Inter", "sans-serif"],
+              logo: ["Cinzel", "serif"],
+            },
+            boxShadow: {
+                'card': '0 20px 40px -5px rgba(58, 80, 32, 0.08)',
+                'glow': '0 0 20px rgba(176, 129, 68, 0.4)',
+                'paper': '2px 4px 12px rgba(99, 61, 12, 0.08)',
+                'book-3d': '5px 5px 15px rgba(0,0,0,0.2), 10px 10px 25px rgba(0,0,0,0.1)',
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'DM Serif Display', serif; }
+        .material-icons-outlined, .material-symbols-outlined { vertical-align: middle; }
     </style>
+
 </head>
-<body class="overflow-x-hidden min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 transition-colors duration-500 antialiased selection:bg-tan selection:text-white overflow-x-hidden">
+
+
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
+        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
                     <div class="flex flex-col">
-                        <span class="text-xl font-bold text-[var(--deep-forest)] font-logo tracking-wide leading-none">LIBRARIA</span>
+                        <span class="text-xl font-bold text-primary dark:text-sage font-logo tracking-wide leading-none">LIBRARIA</span>
                     </div>
                 </a>
 
                 <div class="hidden md:flex flex-1 max-w-xl mx-auto">
-                    <form action="index.php" method="GET" class="w-full relative group">
-                        <input type="text" name="s" placeholder="Cari buku..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm shadow-inner">
-                        <span class="material-symbols-outlined absolute left-3 top-2 text-[var(--text-muted)] group-focus-within:text-[var(--warm-tan)] text-lg">search</span>
+                    <form action="" method="GET" class="w-full relative group">
+                        <input type="text" name="s" placeholder="Cari buku, penulis..."
+                               value="<?php echo isset($_GET['s']) ? $_GET['s'] : '' ?>"
+                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
+                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 group-focus-within:text-tan text-lg">search</span>
                     </form>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
-                        <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
-                        <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
-                        <a href="chat_list.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Chat</a>
+                    <button onclick="toggleDarkMode()" class="w-10 h-10 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">
+                        <span class="material-icons-outlined text-xl">dark_mode</span>
+                    </button>
+
+                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-stone-600 dark:text-stone-400 mr-2">
+                        <a href="index.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Beranda</a>
+                        <a href="all_books.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Buku</a>
+                        <a href="my_orders.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Pesanan</a>
+                        <a href="chat_list.php" class="px-4 py-2 rounded-xl hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">Chat</a>
                     </div>
 
-                    <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all">
-                        <span class="material-symbols-outlined">help</span>
-                    </a>
-
                     <div class="relative">
-                        <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all relative">
+                        <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300 relative">
                             <span class="material-symbols-outlined">notifications</span>
-                            <?php if($total_notif > 0): ?><span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span><?php endif; ?>
+                            <?php if(isset($total_notif) && $total_notif > 0): ?>
+                                <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-stone-900 animate-ping"></span>
+                                <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-stone-900"></span>
+                            <?php endif; ?>
                         </button>
-                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                            <div class="px-4 py-3 border-b border-[var(--border-color)]"><h4 class="font-bold text-[var(--deep-forest)] text-sm">Notifikasi</h4></div>
-                            <div class="max-h-64 overflow-y-auto">
-                                <?php if($total_notif == 0): ?><div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div><?php endif; ?>
+                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-80 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                            <div class="px-4 py-3 border-b border-tan/10 dark:border-stone-800 flex justify-between items-center">
+                                <h4 class="font-bold text-primary dark:text-sage text-sm">Notifikasi</h4>
+                                <?php if(isset($total_notif) && $total_notif > 0): ?><span class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold"><?php echo $total_notif ?> Baru</span><?php endif; ?>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto custom-scroll">
+                                <?php if(isset($notif_list) && !empty($notif_list)): ?>
+                                    <?php foreach($notif_list as $n): ?>
+                                    <a href="<?php echo $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:hover:bg-stone-800 transition-colors border-b border-tan/10 dark:border-stone-800 last:border-0">
+                                        <div class="p-2 bg-<?php echo $n['color'] ?>-100 dark:bg-<?php echo $n['color'] ?>-900/30 text-<?php echo $n['color'] ?>-600 dark:text-<?php echo $n['color'] ?>-400 rounded-full shrink-0">
+                                            <span class="material-symbols-outlined text-lg"><?php echo $n['icon'] ?></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-stone-800 dark:text-stone-200"><?php echo $n['title'] ?></p>
+                                            <p class="text-xs text-stone-500 dark:text-stone-400"><?php echo $n['text'] ?></p>
+                                        </div>
+                                    </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-6 text-stone-400 text-xs italic">Tidak ada notifikasi baru.</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
 
-                    <a href="cart.php" class="relative w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border-color)] bg-white text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <a href="cart.php" class="relative w-10 h-10 flex items-center justify-center rounded-full border border-tan/20 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:text-primary dark:hover:text-sage hover:shadow-md transition-all">
                         <span class="material-symbols-outlined">shopping_bag</span>
-                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce <?= $cart_count > 0 ? '' : 'hidden' ?>"><?= $cart_count ?></span>
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white dark:border-stone-900 animate-bounce <?php echo (isset($cart_count) && $cart_count > 0) ? '' : 'hidden' ?>"><?php echo isset($cart_count) ? $cart_count : 0 ?></span>
                     </a>
 
                     <div class="relative ml-1">
-                        <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-[var(--warm-tan)] bg-white shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none">
-                            <img src="<?= $profile_pic ?>" class="h-9 w-9 rounded-full object-cover border border-[var(--warm-tan)]">
+                        <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-transparent hover:bg-white dark:hover:bg-stone-800 hover:shadow-sm hover:border-tan/20 dark:hover:border-stone-700 transition-all duration-300 focus:outline-none">
+                            <img src="<?php echo isset($profile_pic) ? $profile_pic : '../assets/images/default_profile.png' ?>" class="h-9 w-9 rounded-full object-cover border border-tan dark:border-stone-600">
                             <div class="hidden md:block text-left">
-                                <p class="text-[10px] text-[var(--text-muted)] font-bold uppercase leading-none mb-0.5">Hi,</p>
-                                <p class="text-xs font-bold text-[var(--deep-forest)] leading-none truncate max-w-[80px]"><?= explode(' ', $buyer_name)[0] ?></p>
+                                <p class="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase leading-none mb-0.5">Hi,</p>
+                                <p class="text-xs font-bold text-primary dark:text-sage leading-none truncate max-w-[80px]"><?php echo isset($buyer_name) ? explode(' ', $buyer_name)[0] : 'User' ?></p>
                             </div>
-                            <span class="material-symbols-outlined text-[var(--text-muted)] text-sm hidden md:block">expand_more</span>
+                            <span class="material-symbols-outlined text-stone-500 dark:text-stone-400 text-sm hidden md:block">expand_more</span>
                         </button>
-                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                            <a href="profile.php" class="flex items-center gap-3 px-4 py-2 bg-[var(--cream-bg)] text-sm font-bold text-[var(--deep-forest)]"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
-                            <div class="border-t border-[var(--border-color)] my-1"></div>
-                            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-sm font-bold text-red-600 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
+                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                            <div class="px-4 py-3 border-b border-tan/10 dark:border-stone-800 md:hidden">
+                                <p class="text-sm font-bold text-primary dark:text-sage"><?php echo isset($buyer_name) ? $buyer_name : 'User' ?></p>
+                            </div>
+                            <div class="lg:hidden border-b border-tan/10 dark:border-stone-800 pb-2 mb-2">
+                                <a href="index.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">home</span> Beranda</a>
+                                <a href="all_books.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">menu_book</span> Buku</a>
+                                <a href="my_orders.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">receipt_long</span> Pesanan</a>
+                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm text-stone-600 dark:text-stone-300"><span class="material-symbols-outlined text-lg">chat</span> Chat</a>
+                            </div>
+                            <a href="profile.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm font-bold text-stone-800 dark:text-stone-200"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
+                            <a href="help.php" class="flex items-center gap-3 px-4 py-2 hover:bg-cream dark:hover:bg-stone-800 text-sm font-bold text-stone-800 dark:text-stone-200"><span class="material-symbols-outlined text-lg">help</span> Bantuan</a>
+                            <div class="border-t border-tan/10 dark:border-stone-800 my-1"></div>
+                            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-bold text-red-600 dark:text-red-400 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
                         </div>
                     </div>
                 </div>
@@ -219,32 +349,34 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
         </div>
     </nav>
 
+
+
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
-        
-        <h1 class="text-3xl lg:text-4xl font-bold text-[var(--deep-forest)] title-font mb-8 text-center" data-aos="fade-down">Pengaturan Akun</h1>
+
+        <h1 class="text-3xl lg:text-4xl font-bold text-primary dark:text-sage title-font mb-8 text-center" data-aos="fade-down">Pengaturan Akun</h1>
 
         <div class="flex flex-col lg:flex-row gap-8" data-aos="fade-up">
-            
+
             <div class="lg:w-1/3 space-y-6">
-                <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow text-center relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-24 bg-[var(--deep-forest)] opacity-10"></div>
-                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-[var(--light-sage)] rounded-full blur-3xl opacity-30"></div>
+                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-24 bg-primary opacity-10"></div>
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-sage rounded-full blur-3xl opacity-30"></div>
 
                     <div class="relative z-10">
                         <div class="w-32 h-32 mx-auto rounded-full p-1 bg-white border-4 border-[var(--cream-bg)] shadow-lg mb-4">
                             <img src="<?= $profile_pic ?>" id="previewImg" class="w-full h-full rounded-full object-cover">
                         </div>
-                        <h2 class="text-xl font-bold text-[var(--text-dark)]"><?= $user['full_name'] ?></h2>
-                        <p class="text-sm text-[var(--text-muted)]"><?= $user['email'] ?></p>
-                        
-                        <div class="mt-6 pt-6 border-t border-dashed border-[var(--border-color)]">
-                            <p class="text-xs text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">Bergabung Sejak</p>
-                            <p class="text-sm font-bold text-[var(--deep-forest)]"><?= date('d F Y', strtotime($user['created_at'])) ?></p>
+                        <h2 class="text-xl font-bold text-stone-800 dark:text-stone-200"><?= $user['full_name'] ?></h2>
+                        <p class="text-sm text-stone-500 dark:text-stone-400"><?= $user['email'] ?></p>
+
+                        <div class="mt-6 pt-6 border-t border-dashed border-tan/20 dark:border-stone-800">
+                            <p class="text-xs text-stone-500 dark:text-stone-400 uppercase font-bold tracking-widest mb-1">Bergabung Sejak</p>
+                            <p class="text-sm font-bold text-primary dark:text-sage"><?= date('d F Y', strtotime($user['created_at'])) ?></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-[var(--deep-forest)] text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
+                <div class="bg-primary text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
                     <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                     <h4 class="font-bold text-lg mb-2">Butuh Bantuan?</h4>
                     <p class="text-xs text-white/80 mb-4">Jika Anda mengalami kendala dengan akun Anda, silakan hubungi kami.</p>
@@ -255,65 +387,65 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
             </div>
 
             <div class="lg:w-2/3 space-y-8">
-                
-                <form method="POST" enctype="multipart/form-data" class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow">
-                    <h3 class="text-xl font-bold text-[var(--deep-forest)] mb-6 flex items-center gap-2">
+
+                <form method="POST" enctype="multipart/form-data" class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
+                    <h3 class="text-xl font-bold text-primary dark:text-sage mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined">edit_square</span> Edit Informasi
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Nama Lengkap</label>
-                            <input type="text" name="full_name" value="<?= $user['full_name'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]" required>
+                            <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Nama Lengkap</label>
+                            <input type="text" name="full_name" value="<?= $user['full_name'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200" required>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Email</label>
-                            <input type="email" name="email" value="<?= $user['email'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]" required>
+                            <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Email</label>
+                            <input type="email" name="email" value="<?= $user['email'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200" required>
                         </div>
-                        
+
                         <div>
-                            <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">NIK / Identitas</label>
-                            <input type="number" name="nik" value="<?= $user['nik'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]">
+                            <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">NIK / Identitas</label>
+                            <input type="number" name="nik" value="<?= $user['nik'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200">
                         </div>
-                        
+
                         <div>
-                            <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Ganti Foto Profil</label>
-                            <input type="file" name="profile_image" id="fileInput" accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--light-sage)] file:text-[var(--deep-forest)] hover:file:bg-[var(--warm-tan)] hover:file:text-white transition-all cursor-pointer">
+                            <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Ganti Foto Profil</label>
+                            <input type="file" name="profile_image" id="fileInput" accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sage file:text-primary dark:text-sage hover:file:bg-tan hover:file:text-white transition-all cursor-pointer">
                         </div>
                     </div>
 
                     <div class="mb-8">
-                        <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Alamat Lengkap</label>
-                        <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]"><?= $user['address'] ?></textarea>
+                        <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Alamat Lengkap</label>
+                        <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200"><?= $user['address'] ?></textarea>
                     </div>
 
                     <div class="text-right">
-                        <button type="submit" name="update_profile" class="px-8 py-3 bg-[var(--deep-forest)] text-white font-bold rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-lg flex items-center gap-2 ml-auto">
+                        <button type="submit" name="update_profile" class="px-8 py-3 bg-primary text-white font-bold rounded-xl hover:bg-chocolate transition-all shadow-lg flex items-center gap-2 ml-auto">
                             <span class="material-symbols-outlined text-sm">save</span> Simpan Perubahan
                         </button>
                     </div>
                 </form>
 
-                <form method="POST" class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow relative overflow-hidden">
+                <form method="POST" class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow relative overflow-hidden">
                     <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-red-50 rounded-full blur-3xl opacity-50"></div>
-                    
-                    <h3 class="text-xl font-bold text-[var(--deep-forest)] mb-6 flex items-center gap-2 relative z-10">
+
+                    <h3 class="text-xl font-bold text-primary dark:text-sage mb-6 flex items-center gap-2 relative z-10">
                         <span class="material-symbols-outlined">lock_reset</span> Ganti Password
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 relative z-10">
                         <div>
-                            <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Password Baru</label>
-                            <input type="password" name="new_password" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
+                            <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Password Baru</label>
+                            <input type="password" name="new_password" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Konfirmasi Password</label>
-                            <input type="password" name="confirm_password" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
+                            <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Konfirmasi Password</label>
+                            <input type="password" name="confirm_password" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
                         </div>
                     </div>
 
                     <div class="text-right relative z-10">
-                        <button type="submit" name="change_password" class="px-8 py-3 bg-white border border-[var(--border-color)] text-[var(--deep-forest)] font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center gap-2 ml-auto">
+                        <button type="submit" name="change_password" class="px-8 py-3 bg-white border border-tan/20 dark:border-stone-800 text-primary dark:text-sage font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center gap-2 ml-auto">
                             <span class="material-symbols-outlined text-sm">key</span> Update Password
                         </button>
                     </div>
@@ -324,11 +456,11 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
     </main>
 
-    <footer class="bg-white border-t border-[var(--border-color)] py-10 mt-auto">
+    <footer class="bg-white border-t border-tan/20 dark:border-stone-800 py-10 mt-auto">
         <div class="max-w-7xl mx-auto px-6 text-center">
-            <h2 class="text-2xl font-bold text-[var(--deep-forest)] font-logo mb-2 tracking-widest">LIBRARIA</h2>
-            <p class="text-xs text-[var(--text-muted)] mb-6">Platform jual beli buku terpercaya untuk masa depan literasi.</p>
-            <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-widest uppercase">&copy; 2025 Libraria Bookstore. All rights reserved.</p>
+            <h2 class="text-2xl font-bold text-primary dark:text-sage font-logo mb-2 tracking-widest">LIBRARIA</h2>
+            <p class="text-xs text-stone-500 dark:text-stone-400 mb-6">Platform jual beli buku terpercaya untuk masa depan literasi.</p>
+            <p class="text-[10px] text-stone-500 dark:text-stone-400 font-bold tracking-widest uppercase">&copy; 2025 Libraria Bookstore. All rights reserved.</p>
         </div>
     </footer>
 
@@ -364,8 +496,48 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
             }
         });
     </script>
-    
+
     <?= $swal_alert ?>
+
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
+
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
 
 </body>
 </html>
