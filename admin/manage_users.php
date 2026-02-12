@@ -34,11 +34,11 @@ if (isset($_POST['add_seller'])) {
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email     = mysqli_real_escape_string($conn, $_POST['email']);
     $nik       = mysqli_real_escape_string($conn, $_POST['nik']);
-    $password  = $_POST['password']; 
-    
+    $password  = $_POST['password'];
+
     // Validasi 1: Cek Email Duplikat
     $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email'");
-    
+
     // Validasi 2: Cek NIK Duplikat (Hanya jika NIK diisi)
     $nik_duplicate = false;
     if(!empty($nik)) {
@@ -55,9 +55,9 @@ if (isset($_POST['add_seller'])) {
     } else {
         // Jika NIK kosong, masukkan NULL agar tidak bentrok dengan UNIQUE KEY
         $nik_val = empty($nik) ? "NULL" : "'$nik'";
-        
+
         $query = "INSERT INTO users (full_name, email, nik, password, role) VALUES ('$full_name', '$email', $nik_val, '$password', 'seller')";
-        
+
         if (mysqli_query($conn, $query)) {
             $alert = "<script>alert('Penjual Berhasil Ditambahkan!'); window.location='manage_users.php';</script>";
         } else {
@@ -84,7 +84,7 @@ if (isset($_POST['edit_user'])) {
 
     // Cek duplikat email KECUALI milik user ini sendiri
     $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email='$email' AND id != '$id'");
-    
+
     // Cek duplikat NIK KECUALI milik user ini sendiri (hanya jika NIK diisi)
     $nik_duplicate = false;
     if(!empty($nik)) {
@@ -93,7 +93,7 @@ if (isset($_POST['edit_user'])) {
             $nik_duplicate = true;
         }
     }
-    
+
     if(mysqli_num_rows($check_email) > 0){
         $alert = "<script>alert('GAGAL: Email sudah digunakan user lain!');</script>";
     } elseif ($nik_duplicate) {
@@ -127,7 +127,7 @@ if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
     $check_status = mysqli_query($conn, "SELECT last_activity FROM users WHERE id='$id'");
     $u_data = mysqli_fetch_assoc($check_status);
-    
+
     $is_online = false;
     if ($u_data['last_activity']) {
         if (time() - strtotime($u_data['last_activity']) < 300) $is_online = true;
@@ -156,86 +156,94 @@ if(isset($_SESSION['user_id'])){
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Kelola User - Libraria Admin</title>
+    <title>Kelola User - Libraria Admin</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700&family=Material+Icons+Outlined&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-<style type="text/tailwindcss">
-    :root {
-        --deep-forest: #3E4B1C;
-        --chocolate-brown: #663F05;
-        --warm-tan: #B18143;
-        --light-sage: #DCE3AC;
-        --cream-bg: #FEF9E6;
-        --sidebar-active: var(--deep-forest);
-        --text-dark: #2D2418;
-        --text-muted: #6B6155;
-        --border-color: #E6E1D3;
-    }
-    body { 
-        font-family: 'Quicksand', sans-serif;
-        background-color: var(--cream-bg);
-        color: var(--text-dark);
-    }
-    .title-font { font-weight: 700; }
-    
-    .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
-    .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    #sidebar, #main-content, #sidebar-logo, .sidebar-text-wrapper, .menu-text { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-
-    #sidebar-header { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
-    #sidebar-logo { height: 5rem; width: auto; }
-    .sidebar-text-wrapper { opacity: 1; width: auto; margin-left: 0.75rem; overflow: hidden; white-space: nowrap; }
-    .menu-text { opacity: 1; width: auto; display: inline-block; }
-
-    .sidebar-collapsed #sidebar-header { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; }
-    .sidebar-collapsed #sidebar-logo { height: 3.5rem !important; width: auto; margin: 0 auto; }
-    .sidebar-collapsed .sidebar-text-wrapper { opacity: 0 !important; width: 0 !important; margin-left: 0 !important; pointer-events: none; }
-    .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
-    .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
-
-    .modal { transition: opacity 0.25s ease; }
-    body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
-</style>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3a5020",
+              "primary-light": "#537330",
+              "chocolate": "#633d0c",
+              "chocolate-light": "#8a5a1b",
+              "tan": "#b08144",
+              "sand": "#e6e2dd",
+              "sage": "#d1d6a7",
+              "sage-dark": "#aeb586",
+              "cream": "#fefbe9",
+              "background-light": "#fefbe9",
+              "background-dark": "#1a1c18",
+            },
+            fontFamily: {
+              display: ["DM Serif Display", "serif"],
+              sans: ["Inter", "sans-serif"],
+              logo: ["Cinzel", "serif"],
+            },
+            boxShadow: {
+                'card': '0 20px 40px -5px rgba(58, 80, 32, 0.08)',
+                'glow': '0 0 20px rgba(176, 129, 68, 0.4)',
+                'paper': '2px 4px 12px rgba(99, 61, 12, 0.08)',
+                'book-3d': '5px 5px 15px rgba(0,0,0,0.2), 10px 10px 25px rgba(0,0,0,0.1)',
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'DM Serif Display', serif; }
+        .material-icons-outlined, .material-symbols-outlined { vertical-align: middle; }
+    </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 transition-colors duration-500 antialiased selection:bg-tan selection:text-white overflow-x-hidden">
     <?= isset($alert) ? $alert : '' ?>
 
 <div class="flex min-h-screen">
-    
-    <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
-        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
-            <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
-            <div class="sidebar-text-wrapper flex flex-col justify-center">
-                <h1 class="text-2xl font-bold text-[var(--deep-forest)] tracking-tight title-font leading-none">LIBRARIA</h1>
-                <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Admin Panel</p>
+
+    <aside id="sidebar" class="w-64 bg-cream dark:bg-stone-900 border-r border-tan/20 dark:border-stone-800 flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none transition-colors duration-300">
+
+        <div id="sidebar-header" class="h-28 flex items-center border-b border-tan/20 dark:border-stone-800 shrink-0 px-6">
+            <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="h-12 w-auto object-contain flex-shrink-0">
+            <div class="sidebar-text-wrapper flex flex-col justify-center ml-3">
+                <h1 class="text-xl font-bold text-primary dark:text-sage tracking-tight font-logo leading-none">LIBRARIA</h1>
+                <p class="text-[10px] font-bold tracking-[0.2em] text-tan mt-1 uppercase">Admin Panel</p>
             </div>
         </div>
-        <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
-            <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+
+        <nav class="flex-1 px-4 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
+            <a href="index.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group font-medium hover:bg-primary/10 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400 hover:text-primary dark:hover:text-sage">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
-                <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
+                <span class="menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            <a href="manage_users.php" class="flex items-center gap-3 px-4 py-3 sidebar-active rounded-2xl transition-all group shadow-md shadow-green-900/10">
+
+            <a href="manage_users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group font-medium hover:bg-primary/10 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400 hover:text-primary dark:hover:text-sage">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">group</span>
-                <span class="font-semibold menu-text whitespace-nowrap">Kelola User</span>
+                <span class="menu-text whitespace-nowrap">Kelola User</span>
             </a>
-            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+
+            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group font-medium hover:bg-primary/10 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400 hover:text-primary dark:hover:text-sage">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
-                <span class="font-medium menu-text whitespace-nowrap">Kategori Buku</span>
+                <span class="menu-text whitespace-nowrap">Kategori Buku</span>
             </a>
-            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+
+            <a href="help.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group font-medium hover:bg-primary/10 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400 hover:text-primary dark:hover:text-sage">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
-                <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
+                <span class="menu-text whitespace-nowrap">Bantuan</span>
             </a>
         </nav>
-        <div class="p-3 border-t border-[var(--border-color)]">
-            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
+
+        <div class="p-4 border-t border-tan/20 dark:border-stone-800">
+            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Sign Out</span>
             </a>
@@ -243,89 +251,96 @@ if(isset($_SESSION['user_id'])){
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+
+        <header class="flex justify-between items-center mb-8 bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Manajemen Pengguna</h2></div>
+                <div><h2 class="text-xl lg:text-2xl title-font text-stone-800 dark:text-stone-200 hidden md:block">Manajemen Pengguna</h2></div>
             </div>
+
             <div class="flex items-center gap-4 relative">
-                <button onclick="toggleModal('addSellerModal')" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-[var(--chocolate-brown)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-900/20 text-sm">
+                <button onclick="toggleModal('addSellerModal')" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-chocolate text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-900/20 text-sm">
                     <span class="material-symbols-outlined text-[18px]">person_add</span> Tambah Penjual
                 </button>
-                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
-                    <img src="<?= $profile_pic ?>" alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
-                    <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $admin_name ?></p>
-                        <p class="text-[10px] text-[var(--warm-tan)] leading-none mt-1 font-bold uppercase">Super Admin</p>
-                    </div>
-                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)]">expand_more</span>
+
+                <button onclick="toggleDarkMode()" class="w-10 h-10 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-primary hover:text-white dark:hover:bg-stone-800 transition-all duration-300">
+                    <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors"><span class="material-symbols-outlined text-[20px]">person</span> My Profile</a>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
+
+                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white dark:bg-stone-800 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-700 card-shadow hover:shadow-md transition-all focus:outline-none">
+                    <img src="<?= $profile_pic ?>" alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-cream dark:border-stone-600">
+                    <div class="text-left hidden sm:block">
+                        <p class="text-xs font-bold leading-none title-font text-stone-800 dark:text-stone-200"><?= $admin_name ?></p>
+                        <p class="text-[10px] text-tan leading-none mt-1 font-bold uppercase">Super Admin</p>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
+                </button>
+
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-700 dark:text-stone-300 hover:bg-sage/30 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">person</span> My Profile</a>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-aos="fade-up">
-            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
-                <div class="w-12 h-12 rounded-full bg-[var(--light-sage)]/40 flex items-center justify-center text-[var(--deep-forest)]"><span class="material-symbols-outlined text-2xl">group</span></div>
-                <div><h4 class="text-2xl font-bold text-[var(--deep-forest)]"><?= $count_all ?></h4><p class="text-xs text-[var(--text-muted)] font-bold uppercase">Total Pengguna</p></div>
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
+                <div class="w-12 h-12 rounded-full bg-sage/40 dark:bg-sage/20 flex items-center justify-center text-primary dark:text-sage"><span class="material-symbols-outlined text-2xl">group</span></div>
+                <div><h4 class="text-2xl font-bold text-primary dark:text-sage"><?= $count_all ?></h4><p class="text-xs text-stone-500 dark:text-stone-400 font-bold uppercase">Total Pengguna</p></div>
             </div>
-            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
-                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600"><span class="material-symbols-outlined text-2xl">storefront</span></div>
-                <div><h4 class="text-2xl font-bold text-[var(--deep-forest)]"><?= $count_seller ?></h4><p class="text-xs text-[var(--text-muted)] font-bold uppercase">Total Penjual</p></div>
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
+                <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400"><span class="material-symbols-outlined text-2xl">storefront</span></div>
+                <div><h4 class="text-2xl font-bold text-primary dark:text-sage"><?= $count_seller ?></h4><p class="text-xs text-stone-500 dark:text-stone-400 font-bold uppercase">Total Penjual</p></div>
             </div>
-            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
-                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><span class="material-symbols-outlined text-2xl">shopping_bag</span></div>
-                <div><h4 class="text-2xl font-bold text-[var(--deep-forest)]"><?= $count_buyer ?></h4><p class="text-xs text-[var(--text-muted)] font-bold uppercase">Total Pembeli</p></div>
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform">
+                <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400"><span class="material-symbols-outlined text-2xl">shopping_bag</span></div>
+                <div><h4 class="text-2xl font-bold text-primary dark:text-sage"><?= $count_buyer ?></h4><p class="text-xs text-stone-500 dark:text-stone-400 font-bold uppercase">Total Pembeli</p></div>
             </div>
-            <div class="bg-[var(--deep-forest)] p-6 rounded-[2.5rem] text-white card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform shadow-lg shadow-green-900/20">
+            <div class="bg-primary dark:bg-stone-800 p-6 rounded-[2.5rem] text-white card-shadow flex items-center gap-4 hover:-translate-y-1 transition-transform shadow-lg shadow-green-900/20">
                 <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm"><span class="material-symbols-outlined text-2xl animate-pulse">wifi</span></div>
                 <div><h4 class="text-2xl font-bold text-white"><?= $count_online ?></h4><p class="text-xs text-white/80 font-bold uppercase">Sedang Online</p></div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-aos="fade-up" data-aos-delay="100">
-            <?php while($usr = mysqli_fetch_assoc($users)): 
+            <?php while($usr = mysqli_fetch_assoc($users)):
                 $is_online = false;
                 if ($usr['last_activity']) {
                     if (time() - strtotime($usr['last_activity']) < 300) $is_online = true;
                 }
                 $user_pic = !empty($usr['profile_image']) ? "../assets/uploads/profiles/" . $usr['profile_image'] : "../assets/images/default_profile.png";
             ?>
-            
-            <div class="bg-white rounded-[2.5rem] p-6 border border-[var(--border-color)] card-shadow hover:shadow-lg transition-all group relative overflow-hidden">
-                
-                <div class="absolute top-0 right-0 w-24 h-24 bg-[var(--light-sage)]/20 rounded-bl-[3rem] transition-all group-hover:scale-110 pointer-events-none z-0"></div>
-                
+
+            <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-6 border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-lg transition-all group relative overflow-hidden">
+
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sage/20 dark:bg-sage/10 rounded-bl-[3rem] transition-all group-hover:scale-110 pointer-events-none z-0"></div>
+
                 <div class="flex items-start justify-between mb-6 relative z-10">
                     <div class="flex items-center gap-4">
-                        <img src="<?= $user_pic ?>" class="w-16 h-16 rounded-2xl object-cover shadow-sm border border-stone-100 bg-stone-100" onerror="this.src='../assets/images/logo.png'">
+                        <img src="<?= $user_pic ?>" class="w-16 h-16 rounded-2xl object-cover shadow-sm border border-stone-100 dark:border-stone-700 bg-stone-100 dark:bg-stone-800" onerror="this.src='../assets/images/logo.png'">
                         <div>
-                            <h3 class="font-bold text-lg text-[var(--text-dark)] leading-tight mb-1"><?= $usr['full_name'] ?></h3>
-                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <?= $usr['role'] == 'seller' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-blue-50 text-blue-600 border border-blue-100' ?>">
+                            <h3 class="font-bold text-lg text-stone-800 dark:text-stone-200 leading-tight mb-1"><?= $usr['full_name'] ?></h3>
+                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <?= $usr['role'] == 'seller' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50' ?>">
                                 <?= ucfirst($usr['role']) ?>
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="flex gap-2">
-                        <button type="button" 
-                                onclick="openEditModal('<?= $usr['id'] ?>', '<?= htmlspecialchars($usr['full_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['nik'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['role'], ENT_QUOTES) ?>', `<?= htmlspecialchars($usr['address'], ENT_QUOTES) ?>`)" 
-                                class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-[var(--warm-tan)] hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
+                        <button type="button"
+                                onclick="openEditModal('<?= $usr['id'] ?>', '<?= htmlspecialchars($usr['full_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['nik'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['role'], ENT_QUOTES) ?>', `<?= htmlspecialchars($usr['address'], ENT_QUOTES) ?>`)"
+                                class="w-10 h-10 rounded-full bg-stone-50 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:bg-tan hover:text-white dark:hover:bg-tan dark:hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
-                        
+
                         <?php if(!$is_online): ?>
-                        <a href="?delete=<?= $usr['id'] ?>" onclick="return confirm('Hapus pengguna ini selamanya?')" class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-red-500 hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
+                        <a href="?delete=<?= $usr['id'] ?>" onclick="return confirm('Hapus pengguna ini selamanya?')" class="w-10 h-10 rounded-full bg-stone-50 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:bg-red-500 hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
                             <span class="material-symbols-outlined text-lg">delete</span>
                         </a>
                         <?php else: ?>
-                        <button type="button" onclick="alert('User sedang online!')" class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-300 cursor-not-allowed z-20 relative">
+                        <button type="button" onclick="alert('User sedang online!')" class="w-10 h-10 rounded-full bg-stone-50 dark:bg-stone-800 flex items-center justify-center text-stone-300 dark:text-stone-600 cursor-not-allowed z-20 relative">
                             <span class="material-symbols-outlined text-lg">lock</span>
                         </button>
                         <?php endif; ?>
@@ -333,28 +348,28 @@ if(isset($_SESSION['user_id'])){
                 </div>
 
                 <div class="space-y-3 relative z-10">
-                    <div class="flex items-center gap-3 text-sm text-stone-600 bg-stone-50/50 p-3 rounded-xl">
-                        <span class="material-symbols-outlined text-[var(--warm-tan)]">mail</span>
+                    <div class="flex items-center gap-3 text-sm text-stone-600 dark:text-stone-400 bg-stone-50/50 dark:bg-stone-800/50 p-3 rounded-xl">
+                        <span class="material-symbols-outlined text-tan">mail</span>
                         <span class="truncate"><?= $usr['email'] ?></span>
                     </div>
-                    <div class="flex items-center gap-3 text-sm text-stone-600 bg-stone-50/50 p-3 rounded-xl">
-                        <span class="material-symbols-outlined text-[var(--warm-tan)]">badge</span>
+                    <div class="flex items-center gap-3 text-sm text-stone-600 dark:text-stone-400 bg-stone-50/50 dark:bg-stone-800/50 p-3 rounded-xl">
+                        <span class="material-symbols-outlined text-tan">badge</span>
                         <span class="truncate font-mono"><?= $usr['nik'] ? $usr['nik'] : 'No NIK' ?></span>
                     </div>
                 </div>
 
-                <div class="mt-6 flex items-center justify-between border-t border-[var(--border-color)] pt-4 relative z-10">
-                    <div class="text-xs text-[var(--text-muted)]">
+                <div class="mt-6 flex items-center justify-between border-t border-tan/20 dark:border-stone-800 pt-4 relative z-10">
+                    <div class="text-xs text-stone-500 dark:text-stone-500">
                         Joined: <span class="font-bold"><?= date('d M Y', strtotime($usr['created_at'])) ?></span>
                     </div>
                     <div>
                         <?php if($is_online): ?>
-                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg">
                                 <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> ONLINE
                             </span>
                         <?php else: ?>
-                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-stone-400 bg-stone-100 px-2 py-1 rounded-lg">
-                                <span class="w-2 h-2 rounded-full bg-stone-300"></span> OFFLINE
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded-lg">
+                                <span class="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-600"></span> OFFLINE
                             </span>
                         <?php endif; ?>
                     </div>
@@ -365,11 +380,11 @@ if(isset($_SESSION['user_id'])){
 
         <div class="mt-8 flex justify-center items-center gap-4">
             <?php if($page > 1): ?>
-                <a href="?page=<?= $page - 1 ?>" class="px-4 py-2 bg-white border border-[var(--border-color)] rounded-xl hover:bg-[var(--cream-bg)] transition-colors text-sm font-bold text-[var(--deep-forest)] shadow-sm">Previous</a>
+                <a href="?page=<?= $page - 1 ?>" class="px-4 py-2 bg-white dark:bg-stone-800 border border-tan/20 dark:border-stone-700 rounded-xl hover:bg-cream dark:hover:bg-stone-700 transition-colors text-sm font-bold text-primary dark:text-sage shadow-sm">Previous</a>
             <?php endif; ?>
-            <span class="text-sm font-bold text-[var(--text-muted)]">Page <?= $page ?> of <?= $total_pages ?></span>
+            <span class="text-sm font-bold text-stone-500 dark:text-stone-400">Page <?= $page ?> of <?= $total_pages ?></span>
             <?php if($page < $total_pages): ?>
-                <a href="?page=<?= $page + 1 ?>" class="px-4 py-2 bg-white border border-[var(--border-color)] rounded-xl hover:bg-[var(--cream-bg)] transition-colors text-sm font-bold text-[var(--deep-forest)] shadow-sm">Next</a>
+                <a href="?page=<?= $page + 1 ?>" class="px-4 py-2 bg-white dark:bg-stone-800 border border-tan/20 dark:border-stone-700 rounded-xl hover:bg-cream dark:hover:bg-stone-700 transition-colors text-sm font-bold text-primary dark:text-sage shadow-sm">Next</a>
             <?php endif; ?>
         </div>
 
@@ -378,49 +393,49 @@ if(isset($_SESSION['user_id'])){
 
 <div id="addSellerModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="modal-overlay absolute w-full h-full bg-stone-900/60 backdrop-blur-sm" onclick="toggleModal('addSellerModal')"></div>
-    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300">
+    <div class="modal-container bg-white dark:bg-stone-900 w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300 border border-tan/20 dark:border-stone-700">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold text-[var(--deep-forest)] title-font">Tambah Penjual</h3>
-            <button onclick="toggleModal('addSellerModal')" class="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-red-100 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-lg">close</span></button>
+            <h3 class="text-2xl font-bold text-primary dark:text-sage title-font">Tambah Penjual</h3>
+            <button onclick="toggleModal('addSellerModal')" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 hover:bg-red-100 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-lg">close</span></button>
         </div>
         <form action="" method="POST" class="space-y-4">
-            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nama Toko</label><input type="text" name="full_name" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all"></div>
-            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">NIK (Wajib)</label><input type="number" name="nik" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all"></div>
-            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Email</label><input type="email" name="email" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all"></div>
-            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Password</label><input type="password" name="password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all"></div>
-            <button type="submit" name="add_seller" class="w-full py-4 mt-4 bg-[var(--deep-forest)] text-white font-bold rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-lg">Simpan Data</button>
+            <div><label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Nama Toko</label><input type="text" name="full_name" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200"></div>
+            <div><label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">NIK (Wajib)</label><input type="number" name="nik" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200"></div>
+            <div><label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Email</label><input type="email" name="email" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200"></div>
+            <div><label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Password</label><input type="password" name="password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200"></div>
+            <button type="submit" name="add_seller" class="w-full py-4 mt-4 bg-primary dark:bg-sage text-white dark:text-primary font-bold rounded-xl hover:bg-chocolate dark:hover:bg-tan transition-all shadow-lg">Simpan Data</button>
         </form>
     </div>
 </div>
 
 <div id="editUserModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="modal-overlay absolute w-full h-full bg-stone-900/60 backdrop-blur-sm" onclick="toggleModal('editUserModal')"></div>
-    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300 max-h-[90vh]">
+    <div class="modal-container bg-white dark:bg-stone-900 w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto p-8 transform transition-all scale-95 duration-300 max-h-[90vh] border border-tan/20 dark:border-stone-700">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold text-[var(--deep-forest)] title-font">Edit Data User</h3>
-            <button onclick="toggleModal('editUserModal')" class="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-red-100 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-lg">close</span></button>
+            <h3 class="text-2xl font-bold text-primary dark:text-sage title-font">Edit Data User</h3>
+            <button onclick="toggleModal('editUserModal')" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 hover:bg-red-100 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-lg">close</span></button>
         </div>
         <form action="" method="POST" class="space-y-4">
             <input type="hidden" name="id" id="edit_id">
-            
+
             <div>
-                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nama Lengkap / Toko</label>
-                <input type="text" name="full_name" id="edit_name" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Nama Lengkap / Toko</label>
+                <input type="text" name="full_name" id="edit_name" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200">
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Email</label>
-                <input type="email" name="email" id="edit_email" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Email</label>
+                <input type="email" name="email" id="edit_email" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">NIK</label>
-                    <input type="text" name="nik" id="edit_nik" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                    <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">NIK</label>
+                    <input type="text" name="nik" id="edit_nik" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Role</label>
-                    <select name="role" id="edit_role" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm">
+                    <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Role</label>
+                    <select name="role" id="edit_role" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-sm text-stone-800 dark:text-stone-200">
                         <option value="buyer">Buyer</option>
                         <option value="seller">Seller</option>
                     </select>
@@ -428,17 +443,17 @@ if(isset($_SESSION['user_id'])){
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Alamat</label>
-                <textarea name="address" id="edit_address" rows="2" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all"></textarea>
+                <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Alamat</label>
+                <textarea name="address" id="edit_address" rows="2" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200"></textarea>
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Reset Password</label>
-                <input type="password" name="password" placeholder="Kosongkan jika tidak ingin mengubah" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Reset Password</label>
+                <input type="password" name="password" placeholder="Kosongkan jika tidak ingin mengubah" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-600 focus:ring-0 transition-all text-stone-800 dark:text-stone-200">
                 <p class="text-[10px] text-orange-500 mt-1 ml-1">*Isi hanya jika ingin mereset password.</p>
             </div>
 
-            <button type="submit" name="edit_user" class="w-full py-4 mt-4 bg-[var(--warm-tan)] text-white font-bold rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-lg">Update Data</button>
+            <button type="submit" name="edit_user" class="w-full py-4 mt-4 bg-tan text-white font-bold rounded-xl hover:bg-chocolate transition-all shadow-lg">Update Data</button>
         </form>
     </div>
 </div>
@@ -449,7 +464,7 @@ if(isset($_SESSION['user_id'])){
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {
@@ -493,6 +508,25 @@ if(isset($_SESSION['user_id'])){
         document.getElementById('edit_role').value = role;
         document.getElementById('edit_address').value = address;
         toggleModal('editUserModal');
+    }
+</script>
+
+<script>
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+
+    function toggleDarkMode() {
+        const html = document.documentElement;
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.theme = 'light';
+        } else {
+            html.classList.add('dark');
+            localStorage.theme = 'dark';
+        }
     }
 </script>
 
