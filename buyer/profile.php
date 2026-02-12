@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 }
 
 $buyer_id = $_SESSION['user_id'];
+$swal_alert = ""; // Variabel untuk menampung script SweetAlert
 
 // --- 2. LOGIC UPDATE PROFIL ---
 if (isset($_POST['update_profile'])) {
@@ -19,37 +20,57 @@ if (isset($_POST['update_profile'])) {
     $nik       = mysqli_real_escape_string($conn, $_POST['nik']);
     $address   = mysqli_real_escape_string($conn, $_POST['address']);
 
-    // Update Text Data
-    $query_update = "UPDATE users SET full_name='$full_name', email='$email', nik='$nik', address='$address' WHERE id='$buyer_id'";
+    // CEK DUPLIKAT (Email atau NIK sudah dipakai orang lain?)
+    $check = mysqli_query($conn, "SELECT id FROM users WHERE (email = '$email' OR nik = '$nik') AND id != '$buyer_id'");
     
-    // Update Foto Jika Ada
-    if (!empty($_FILES['profile_image']['name'])) {
-        $target_dir = "../assets/uploads/profiles/";
-        if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-
-        $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
-        $new_name = "profile_" . $buyer_id . "_" . time() . "." . $ext;
-        
-        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
-            
-            // Hapus foto lama
-            $q_old = mysqli_query($conn, "SELECT profile_image FROM users WHERE id='$buyer_id'");
-            $d_old = mysqli_fetch_assoc($q_old);
-            if (!empty($d_old['profile_image']) && file_exists($target_dir . $d_old['profile_image'])) {
-                unlink($target_dir . $d_old['profile_image']);
-            }
-
-            // Update DB Image
-            mysqli_query($conn, "UPDATE users SET profile_image='$new_name' WHERE id='$buyer_id'");
-        }
-    }
-
-    if (mysqli_query($conn, $query_update)) {
-        $_SESSION['full_name'] = $full_name; // Update session name
-        $success_msg = "Profil berhasil diperbarui!";
+    if (mysqli_num_rows($check) > 0) {
+        // JIKA DUPLIKAT -> MUNCUL POPUP ERROR
+        $swal_alert = "
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memperbarui!',
+                text: 'Email atau NIK sudah digunakan oleh pengguna lain.',
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Coba Lagi'
+            });
+        </script>";
     } else {
-        $error_msg = "Gagal memperbarui profil.";
+        // JIKA AMAN -> LANJUT UPDATE
+        
+        // Logic Upload Foto
+        $img_sql = "";
+        if (!empty($_FILES['profile_image']['name'])) {
+            $target_dir = "../assets/uploads/profiles/";
+            if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
+
+            $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+            $new_name = "profile_" . $buyer_id . "_" . time() . "." . $ext;
+            
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
+                $img_sql = ", profile_image='$new_name'";
+            }
+        }
+
+        // Update Database (TANPA PHONE)
+        $query_update = "UPDATE users SET full_name='$full_name', email='$email', nik='$nik', address='$address' $img_sql WHERE id='$buyer_id'";
+
+        if (mysqli_query($conn, $query_update)) {
+            $_SESSION['full_name'] = $full_name;
+            $swal_alert = "
+            <script>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Profil Anda telah diperbarui.',
+                    confirmButtonColor: '#3E4B1C',
+                    confirmButtonText: 'Oke'
+                });
+            </script>";
+        } else {
+            $swal_alert = "<script>Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');</script>";
+        }
     }
 }
 
@@ -59,17 +80,28 @@ if (isset($_POST['change_password'])) {
     $confirm_pass = $_POST['confirm_password'];
 
     if ($new_pass === $confirm_pass) {
-        // Enkripsi password? Di DB sample Anda insert manual tanpa hash, 
-        // tapi sebaiknya pakai password_hash(). Di sini saya sesuaikan dengan struktur DB Anda (plain text/simple).
-        // Jika pakai hash: $pass_hash = password_hash($new_pass, PASSWORD_DEFAULT);
-        
-        // Asumsi DB Anda pakai plain text sesuai contoh insert:
         $query_pass = "UPDATE users SET password='$new_pass' WHERE id='$buyer_id'";
         if(mysqli_query($conn, $query_pass)){
-            $success_msg = "Password berhasil diubah!";
+            $swal_alert = "
+            <script>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Password Diubah!',
+                    text: 'Silakan login ulang dengan password baru nanti.',
+                    confirmButtonColor: '#3E4B1C'
+                });
+            </script>";
         }
     } else {
-        $error_msg = "Konfirmasi password tidak cocok!";
+        $swal_alert = "
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: 'Konfirmasi password tidak cocok.',
+                confirmButtonColor: '#d33'
+            });
+        </script>";
     }
 }
 
@@ -79,13 +111,11 @@ $user = mysqli_fetch_assoc($query_user);
 $profile_pic = !empty($user['profile_image']) ? "../assets/uploads/profiles/" . $user['profile_image'] : "../assets/images/default_profile.png";
 $buyer_name = $user['full_name'];
 
-// --- DATA NAVBAR (Cart & Notif) ---
+// --- DATA NAVBAR ---
 $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
 $cart_count = mysqli_fetch_assoc($query_cart)['total'] ?? 0;
-
 $query_notif = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$buyer_id' AND is_read = 0");
-$total_chat_unread = mysqli_fetch_assoc($query_notif)['total'];
-$total_notif = $total_chat_unread;
+$total_notif = mysqli_fetch_assoc($query_notif)['total'];
 ?>
 
 <!DOCTYPE html>
@@ -96,6 +126,8 @@ $total_notif = $total_chat_unread;
     <title>Profil Saya - Libraria</title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -114,22 +146,12 @@ $total_notif = $total_chat_unread;
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
         .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
+        
+        /* Custom Font untuk SweetAlert */
+        .swal2-popup { font-family: 'Quicksand', sans-serif !important; border-radius: 1.5rem !important; }
     </style>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
-
-    <?php if(isset($success_msg)): ?>
-    <div id="toast" class="fixed top-28 right-5 z-[60] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white bg-[var(--deep-forest)] animate-bounce">
-        <span class="material-symbols-outlined">check_circle</span>
-        <p class="text-sm font-bold"><?= $success_msg ?></p>
-    </div>
-    <?php endif; ?>
-    <?php if(isset($error_msg)): ?>
-    <div id="toast" class="fixed top-28 right-5 z-[60] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white bg-red-600 animate-bounce">
-        <span class="material-symbols-outlined">error</span>
-        <p class="text-sm font-bold"><?= $error_msg ?></p>
-    </div>
-    <?php endif; ?>
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
         <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
@@ -162,19 +184,11 @@ $total_notif = $total_chat_unread;
                     <div class="relative">
                         <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all relative">
                             <span class="material-symbols-outlined">notifications</span>
-                            <?php if($total_notif > 0): ?>
-                                <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
-                            <?php endif; ?>
+                            <?php if($total_notif > 0): ?><span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span><?php endif; ?>
                         </button>
                         <div id="notificationDropdown" class="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                             <div class="px-4 py-3 border-b border-[var(--border-color)]"><h4 class="font-bold text-[var(--deep-forest)] text-sm">Notifikasi</h4></div>
                             <div class="max-h-64 overflow-y-auto">
-                                <?php if($total_chat_unread > 0): ?>
-                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors">
-                                    <div class="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0"><span class="material-symbols-outlined text-lg">chat</span></div>
-                                    <div><p class="text-sm font-bold text-gray-800">Pesan Masuk</p><p class="text-xs text-gray-500">Ada <?= $total_chat_unread ?> pesan baru.</p></div>
-                                </a>
-                                <?php endif; ?>
                                 <?php if($total_notif == 0): ?><div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div><?php endif; ?>
                             </div>
                         </div>
@@ -256,10 +270,12 @@ $total_notif = $total_chat_unread;
                             <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Email</label>
                             <input type="email" name="email" value="<?= $user['email'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]" required>
                         </div>
+                        
                         <div>
                             <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">NIK / Identitas</label>
                             <input type="number" name="nik" value="<?= $user['nik'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]">
                         </div>
+                        
                         <div>
                             <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Ganti Foto Profil</label>
                             <input type="file" name="profile_image" id="fileInput" accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--light-sage)] file:text-[var(--deep-forest)] hover:file:bg-[var(--warm-tan)] hover:file:text-white transition-all cursor-pointer">
@@ -334,7 +350,6 @@ $total_notif = $total_chat_unread;
             }
         }
 
-        // Image Preview Logic
         const fileInput = document.getElementById('fileInput');
         const previewImg = document.getElementById('previewImg');
 
@@ -348,15 +363,9 @@ $total_notif = $total_chat_unread;
                 reader.readAsDataURL(file);
             }
         });
-
-        // Hide Toast after 3s
-        const toast = document.getElementById('toast');
-        if(toast) {
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
-        }
     </script>
+    
+    <?= $swal_alert ?>
+
 </body>
 </html>
