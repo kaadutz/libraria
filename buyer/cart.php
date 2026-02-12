@@ -12,62 +12,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 }
 
 $buyer_id = $_SESSION['user_id'];
-$buyer_name = $_SESSION['full_name'];
 
-// --- LOGIC: CHECKOUT ---
-if (isset($_POST['checkout'])) {
-    $q_cart = mysqli_query($conn, "
-        SELECT c.*, b.sell_price as current_price, b.seller_id 
-        FROM carts c 
-        JOIN books b ON c.book_id = b.id 
-        WHERE c.buyer_id = '$buyer_id'
-    ");
+// --- AMBIL DATA USER UNTUK NAVBAR ---
+$query_user_info = mysqli_query($conn, "SELECT full_name, profile_image FROM users WHERE id = '$buyer_id'");
+$user_info = mysqli_fetch_assoc($query_user_info);
+$buyer_name = $user_info['full_name'];
+$profile_pic = !empty($user_info['profile_image']) ? "../assets/uploads/profiles/" . $user_info['profile_image'] : "../assets/images/default_profile.png";
 
-    if (mysqli_num_rows($q_cart) > 0) {
-        $orders_by_seller = [];
-        while ($item = mysqli_fetch_assoc($q_cart)) {
-            $orders_by_seller[$item['seller_id']][] = $item;
-        }
-
-        mysqli_begin_transaction($conn);
-        try {
-            foreach ($orders_by_seller as $seller_id => $items) {
-                $invoice = "INV/" . date('Ymd') . "/" . strtoupper(uniqid());
-                $date = date('Y-m-d H:i:s');
-                
-                $q_order = "INSERT INTO orders (buyer_id, invoice_number, order_date, status) VALUES ('$buyer_id', '$invoice', '$date', 'pending')";
-                mysqli_query($conn, $q_order);
-                $order_id = mysqli_insert_id($conn);
-
-                foreach ($items as $item) {
-                    $book_id = $item['book_id'];
-                    $qty = $item['qty'];
-                    $price = $item['current_price']; 
-
-                    mysqli_query($conn, "INSERT INTO order_items (order_id, seller_id, book_id, qty, price_at_transaction) VALUES ('$order_id', '$seller_id', '$book_id', '$qty', '$price')");
-                    mysqli_query($conn, "UPDATE books SET stock = stock - $qty WHERE id = '$book_id'");
-                }
-            }
-            mysqli_query($conn, "DELETE FROM carts WHERE buyer_id = '$buyer_id'");
-            mysqli_commit($conn);
-            $success_checkout = true;
-        } catch (Exception $e) {
-            mysqli_rollback($conn);
-            $error = "Terjadi kesalahan saat checkout.";
-        }
-    }
-}
-
-if (isset($success_checkout)) {
-    echo "<script>alert('Pesanan berhasil dibuat!'); window.location='my_orders.php?status=pending';</script>";
-    exit;
-}
-
-// --- DATA TAMPILAN ---
-$query_user = mysqli_query($conn, "SELECT profile_image FROM users WHERE id = '$buyer_id'");
-$user_data = mysqli_fetch_assoc($query_user);
-$profile_pic = !empty($user_data['profile_image']) ? "../assets/uploads/profiles/" . $user_data['profile_image'] : "../assets/images/default_profile.png";
-
+// --- DATA KERANJANG ---
 $query_display_cart = "
     SELECT c.id as cart_id, c.qty, b.id as book_id, b.title, b.image, b.sell_price, b.stock, u.full_name as seller_name
     FROM carts c
@@ -81,10 +33,10 @@ $cart_items = mysqli_query($conn, $query_display_cart);
 $grand_total = 0;
 $total_items_count = 0;
 
+// --- DATA NAVBAR LAINNYA ---
 $query_notif = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$buyer_id' AND is_read = 0");
 $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
-// Cart count awal
 $query_cart_count = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
 $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
 ?>
@@ -177,9 +129,13 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                     <div class="relative ml-1">
                         <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-transparent hover:bg-white hover:shadow-sm hover:border-[var(--border-color)] transition-all duration-300 focus:outline-none">
                             <img src="<?= $profile_pic ?>" class="h-9 w-9 rounded-full object-cover border border-[var(--warm-tan)]">
+                            <div class="hidden md:block text-left">
+                                <p class="text-[10px] text-[var(--text-muted)] font-bold uppercase leading-none mb-0.5">Hi,</p>
+                                <p class="text-xs font-bold text-[var(--deep-forest)] leading-none truncate max-w-[80px]"><?= explode(' ', $buyer_name)[0] ?></p>
+                            </div>
                             <span class="material-symbols-outlined text-[var(--text-muted)] text-sm hidden md:block">expand_more</span>
                         </button>
-                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden z-50">
+                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                             <a href="profile.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm font-bold text-[var(--text-dark)]"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
                             <div class="border-t border-[var(--border-color)] my-1"></div>
                             <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-sm font-bold text-red-600 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
@@ -260,10 +216,10 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                     </div>
 
                     <div class="mt-4">
-    <a href="checkout.php" class="w-full py-4 bg-[var(--deep-forest)] text-white font-bold rounded-2xl shadow-xl hover:bg-[var(--chocolate-brown)] transition-all flex items-center justify-center gap-2 group">
-        Lanjut Pembayaran <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-    </a>
-</div>
+                        <a href="checkout.php" class="w-full py-4 bg-[var(--deep-forest)] text-white font-bold rounded-2xl shadow-xl hover:bg-[var(--chocolate-brown)] transition-all flex items-center justify-center gap-2 group">
+                            Lanjut Pembayaran <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </a>
+                    </div>
                     
                     <p class="text-[10px] text-center text-[var(--text-muted)] mt-4">
                         <span class="material-symbols-outlined text-sm align-middle">verified_user</span> Transaksi Aman & Terpercaya
@@ -293,6 +249,8 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
 
         function toggleDropdown(id) {
             const dropdown = document.getElementById(id);
+            const allDropdowns = document.querySelectorAll('[id$="Dropdown"]');
+            allDropdowns.forEach(dd => { if(dd.id !== id) dd.classList.add('hidden'); });
             if(dropdown) dropdown.classList.toggle('hidden');
         }
 
@@ -305,13 +263,14 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
 
         // --- AJAX UPDATE CART ---
         function updateCart(cartId, action) {
+            // Konfirmasi hanya jika user klik tombol Hapus (bukan minus)
             if(action === 'remove' && !confirm('Hapus buku ini dari keranjang?')) return;
 
             const formData = new FormData();
             formData.append('cart_id', cartId);
             formData.append('action', action);
 
-            // Fetch ke cart_update.php (nama baru)
+            // Fetch ke cart_update.php
             fetch('cart_update.php', {
                 method: 'POST',
                 body: formData
@@ -320,28 +279,48 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
             .then(data => {
                 if (data.status === 'success') {
                     
-                    if (data.action === 'remove') {
+                    // CEK HASIL AKSI: APAKAH UPDATED ATAU REMOVED?
+                    if (data.action_result === 'removed') {
+                        // Jika dihapus (karena remove ATAU qty jadi 0)
                         const itemCard = document.getElementById('cart-item-' + cartId);
-                        itemCard.remove();
-                        showToast('Produk dihapus dari keranjang', 'success');
+                        if(itemCard) {
+                            itemCard.style.transition = "all 0.3s ease";
+                            itemCard.style.opacity = "0";
+                            itemCard.style.transform = "translateX(50px)";
+                            setTimeout(() => itemCard.remove(), 300);
+                        }
                         
-                        if(data.cart_badge == 0) location.reload();
+                        showToast(data.message, 'success');
+                        
+                        // Jika keranjang jadi kosong total, reload page
+                        if(data.cart_badge == 0) setTimeout(() => location.reload(), 500);
 
                     } else {
+                        // Jika hanya update jumlah
                         const qtyDisplay = document.getElementById('qty-display-' + cartId);
-                        qtyDisplay.innerText = data.new_qty;
+                        if(qtyDisplay) qtyDisplay.innerText = data.new_qty;
                     }
 
+                    // Selalu Update Total Harga & Badge Navbar
                     const grandTotalDisplay = document.getElementById('grand-total-display');
-                    grandTotalDisplay.innerText = data.grand_total_rp;
+                    if(grandTotalDisplay) grandTotalDisplay.innerText = data.grand_total_rp;
 
                     const badge = document.getElementById('cart-badge');
-                    badge.innerText = data.cart_badge;
-                    if(data.cart_badge > 0) badge.classList.remove('hidden');
-                    else badge.classList.add('hidden');
+                    if(badge) {
+                        badge.innerText = data.cart_badge;
+                        if(data.cart_badge > 0) badge.classList.remove('hidden');
+                        else badge.classList.add('hidden');
+                    }
 
                 } else {
-                    showToast(data.message, 'error');
+                    // Jika error (misal item sudah tidak ada di DB)
+                    if (data.code === 'item_not_found') {
+                        const itemCard = document.getElementById('cart-item-' + cartId);
+                        if(itemCard) itemCard.remove();
+                        location.reload(); 
+                    } else {
+                        showToast(data.message, 'error');
+                    }
                 }
             })
             .catch(error => {
