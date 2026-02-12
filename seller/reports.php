@@ -212,7 +212,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
 
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-8 bg-white dark:bg-stone-900/50 dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
@@ -228,7 +228,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
 
-<button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-tan/20 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary dark:text-sage hover:shadow-md transition-all relative">
+<button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white dark:bg-stone-900 border border-tan/20 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary dark:text-sage hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
                         <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
@@ -236,8 +236,8 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     <?php endif; ?>
                 </button>
 
-                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
-                    <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-stone-700 flex justify-between items-center">
                         <h4 class="font-bold text-primary dark:text-sage">Notifikasi</h4>
                         <?php if($total_notif > 0): ?>
                             <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold"><?= $total_notif ?> Baru</span>
@@ -245,16 +245,16 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     </div>
                     <div class="max-h-64 overflow-y-auto">
                         <?php if($total_new_orders > 0): ?>
-                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:bg-stone-800 transition-colors border-b border-gray-50">
+                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:hover:bg-stone-800 transition-colors border-b border-gray-50 dark:border-stone-700">
                             <div class="p-2 bg-orange-100 text-orange-600 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
-                            <div><p class="text-sm font-bold text-gray-800">Pesanan Baru!</p><p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu.</p></div>
+                            <div><p class="text-sm font-bold text-gray-800 dark:text-stone-200">Pesanan Baru!</p><p class="text-xs text-gray-500 dark:text-stone-400">Ada <?= $total_new_orders ?> pesanan menunggu.</p></div>
                         </a>
                         <?php endif; ?>
 
                         <?php if($total_unread_chat > 0): ?>
-                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:bg-stone-800 transition-colors border-b border-gray-50">
+                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:hover:bg-stone-800 transition-colors border-b border-gray-50 dark:border-stone-700">
                             <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
-                            <div><p class="text-sm font-bold text-gray-800">Pesan Masuk</p><p class="text-xs text-gray-500">Ada <?= $total_unread_chat ?> pesan belum dibaca.</p></div>
+                            <div><p class="text-sm font-bold text-gray-800 dark:text-stone-200">Pesan Masuk</p><p class="text-xs text-gray-500 dark:text-stone-400">Ada <?= $total_unread_chat ?> pesan belum dibaca.</p></div>
                         </a>
                         <?php endif; ?>
 
@@ -264,32 +264,32 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     </div>
                 </div>
 
-                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
-                    <div class="w-9 h-9 rounded-full bg-tan text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
+                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white dark:bg-stone-900 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
+                    <div class="w-9 h-9 rounded-full bg-tan text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)] dark:border-stone-700"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $seller_name ?></p>
+                        <p class="text-xs font-bold leading-none title-font dark:text-stone-200"><?= $seller_name ?></p>
                         <p class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mt-1 font-bold uppercase">Seller</p>
                     </div>
                     <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
-                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-sage/30 hover:text-primary dark:text-sage transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-sage/30 hover:text-primary dark:text-stone-300 dark:hover:text-sage transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
+                    <div class="border-t border-gray-100 dark:border-stone-700 my-1"></div>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
             </div>
         </header>
 
         <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-8" data-aos="fade-up">
-            <form method="GET" class="flex flex-wrap items-end gap-3 w-full md:w-auto bg-white p-4 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow">
+            <form method="GET" class="flex flex-wrap items-end gap-3 w-full md:w-auto bg-white dark:bg-stone-900 p-4 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow">
                 <div>
                     <label class="block text-[10px] font-bold text-stone-400 uppercase mb-1">Dari Tanggal</label>
-                    <input type="date" name="start_date" value="<?= $start_date ?>" class="px-4 py-2.5 rounded-xl bg-cream dark:bg-stone-800 border-none text-sm focus:ring-1 focus:ring-[var(--warm-tan)]">
+                    <input type="date" name="start_date" value="<?= $start_date ?>" class="px-4 py-2.5 rounded-xl bg-cream dark:bg-stone-800 border-none text-sm focus:ring-1 focus:ring-[var(--warm-tan)] dark:text-stone-200">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-stone-400 uppercase mb-1">Sampai Tanggal</label>
-                    <input type="date" name="end_date" value="<?= $end_date ?>" class="px-4 py-2.5 rounded-xl bg-cream dark:bg-stone-800 border-none text-sm focus:ring-1 focus:ring-[var(--warm-tan)]">
+                    <input type="date" name="end_date" value="<?= $end_date ?>" class="px-4 py-2.5 rounded-xl bg-cream dark:bg-stone-800 border-none text-sm focus:ring-1 focus:ring-[var(--warm-tan)] dark:text-stone-200">
                 </div>
                 <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-chocolate transition-colors shadow-lg">Filter Data</button>
             </form>
@@ -305,37 +305,37 @@ $total_notif = $total_new_orders + $total_unread_chat;
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" data-aos="fade-up" data-aos-delay="100">
-            <div class="bg-white p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center justify-between hover:-translate-y-1 transition-transform">
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center justify-between hover:-translate-y-1 transition-transform">
                 <div>
                     <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Total Pendapatan</p>
                     <h3 class="text-2xl font-bold text-primary dark:text-sage mt-1">Rp <?= number_format($total_revenue, 0, ',', '.') ?></h3>
                 </div>
-                <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+                <div class="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-400">
                     <span class="material-symbols-outlined text-2xl">payments</span>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center justify-between hover:-translate-y-1 transition-transform">
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center justify-between hover:-translate-y-1 transition-transform">
                 <div>
                     <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Produk Terjual</p>
                     <h3 class="text-2xl font-bold text-primary dark:text-sage mt-1"><?= $total_sold_items ?> <span class="text-sm font-normal">Pcs</span></h3>
                 </div>
-                <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+                <div class="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400">
                     <span class="material-symbols-outlined text-2xl">shopping_cart</span>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center justify-between hover:-translate-y-1 transition-transform">
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center justify-between hover:-translate-y-1 transition-transform">
                 <div>
                     <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Total Transaksi</p>
                     <h3 class="text-2xl font-bold text-primary dark:text-sage mt-1"><?= $total_transactions ?></h3>
                 </div>
-                <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-700">
+                <div class="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-700 dark:text-orange-400">
                     <span class="material-symbols-outlined text-2xl">receipt_long</span>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" data-aos="fade-up" data-aos-delay="200">
-            <div class="bg-white p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow">
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow">
                 <h4 class="text-sm font-bold text-stone-800 dark:text-stone-200 uppercase mb-4 tracking-wider flex items-center gap-2">
                     <span class="material-symbols-outlined text-lg text-tan">trending_up</span> Tren Pendapatan
                 </h4>
@@ -344,7 +344,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow">
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 card-shadow">
                 <h4 class="text-sm font-bold text-stone-800 dark:text-stone-200 uppercase mb-4 tracking-wider flex items-center gap-2">
                     <span class="material-symbols-outlined text-lg text-tan">pie_chart</span> 5 Buku Terlaris
                 </h4>
@@ -354,12 +354,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
             </div>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow overflow-hidden" data-aos="fade-up" data-aos-delay="300">
+        <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow overflow-hidden" data-aos="fade-up" data-aos-delay="300">
             <h3 class="text-xl font-bold text-stone-800 dark:text-stone-200 mb-6 title-font">Rincian Transaksi</h3>
             <div class="overflow-x-auto">
                 <table id="reportTable" class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="text-stone-500 dark:text-stone-400 text-sm border-b border-tan/20 dark:border-stone-800 bg-stone-50/50">
+                        <tr class="text-stone-500 dark:text-stone-400 text-sm border-b border-tan/20 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/50 dark:bg-stone-800/50">
                             <th class="p-4 pl-6 font-bold uppercase tracking-wider">Tanggal</th>
                             <th class="p-4 font-bold uppercase tracking-wider">No. Invoice</th>
                             <th class="p-4 font-bold uppercase tracking-wider">Pembeli</th>
@@ -373,7 +373,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         <?php if (count($data_rows) > 0): ?>
                             <?php foreach ($data_rows as $row): ?>
                             <tr class="border-b border-tan/20 dark:border-stone-800 hover:bg-cream dark:bg-stone-800/50 transition-colors">
-                                <td class="p-4 pl-6 text-stone-500"><?= date('d/m/Y', strtotime($row['order_date'])) ?></td>
+                                <td class="p-4 pl-6 text-stone-500 dark:text-stone-400"><?= date('d/m/Y', strtotime($row['order_date'])) ?></td>
                                 <td class="p-4 font-mono font-bold text-primary dark:text-sage"><?= $row['invoice_number'] ?></td>
                                 <td class="p-4"><?= $row['buyer_name'] ?></td>
                                 <td class="p-4 font-bold"><?= $row['book_title'] ?></td>
@@ -382,7 +382,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                 <td class="p-4 text-right pr-6 font-bold text-chocolate dark:text-tan">Rp <?= number_format($row['subtotal'], 0, ',', '.') ?></td>
                             </tr>
                             <?php endforeach; ?>
-                            <tr class="bg-stone-50/80 font-bold">
+                            <tr class="bg-stone-50 dark:bg-stone-800/80 dark:bg-stone-800/80 font-bold">
                                 <td colspan="6" class="p-4 text-right uppercase tracking-wider text-primary dark:text-sage">Total Pendapatan</td>
                                 <td class="p-4 text-right text-lg text-chocolate dark:text-tan pr-6">Rp <?= number_format($total_revenue, 0, ',', '.') ?></td>
                             </tr>
@@ -517,26 +517,6 @@ $total_notif = $total_new_orders + $total_unread_chat;
         }
     });
 </script>
-
-
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

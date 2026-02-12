@@ -12,24 +12,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 
 $buyer_id = $_SESSION['user_id'];
 
+
 // --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
 $notif_list = [];
 
 // A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
 $q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
-while($msg = mysqli_fetch_assoc($q_msg_notif)){
-    $notif_list[] = [
-        'type' => 'chat',
-        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
-        'text' => substr($msg['message'], 0, 25) . '...',
-        'icon' => 'chat',
-        'color' => 'blue',
-        'link' => 'chat_list.php',
-        'time' => strtotime($msg['created_at'])
-    ];
+if ($q_msg_notif) {
+    while($msg = mysqli_fetch_assoc($q_msg_notif)){
+        $notif_list[] = [
+            'type' => 'chat',
+            'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+            'text' => substr($msg['message'], 0, 25) . '...',
+            'icon' => 'chat',
+            'color' => 'blue',
+            'link' => 'chat_list.php',
+            'time' => strtotime($msg['created_at'])
+        ];
+    }
 }
 
-// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+// B. Ambil 5 Status Pesanan Terakhir
 $q_order_notif = mysqli_query($conn, "
     SELECT invoice_number, status, order_date
     FROM orders
@@ -38,39 +41,41 @@ $q_order_notif = mysqli_query($conn, "
     ORDER BY order_date DESC LIMIT 5
 ");
 
-while($ord = mysqli_fetch_assoc($q_order_notif)){
-    $title = $ord['invoice_number'];
-    $text = ""; $icon = ""; $color = "";
+if ($q_order_notif) {
+    while($ord = mysqli_fetch_assoc($q_order_notif)){
+        $title = $ord['invoice_number'];
+        $text = ""; $icon = ""; $color = "";
 
-    if($ord['status'] == 'approved') {
-        $text = "Pesanan Diterima Penjual. Segera dikemas.";
-        $icon = "inventory_2"; $color = "indigo";
-    } elseif($ord['status'] == 'shipping') {
-        $text = "Paket sedang dalam perjalanan.";
-        $icon = "local_shipping"; $color = "purple";
-    } elseif($ord['status'] == 'rejected') {
-        $text = "Pesanan/Refund Ditolak oleh Penjual.";
-        $icon = "cancel"; $color = "red";
-    } elseif($ord['status'] == 'refunded') {
-        $text = "Pengajuan Refund Disetujui.";
-        $icon = "currency_exchange"; $color = "green";
-    } elseif($ord['status'] == 'finished') {
-        $text = "Pesanan Selesai. Terima kasih!";
-        $icon = "check_circle"; $color = "teal";
+        if($ord['status'] == 'approved') {
+            $text = "Pesanan Diterima Penjual. Segera dikemas.";
+            $icon = "inventory_2"; $color = "indigo";
+        } elseif($ord['status'] == 'shipping') {
+            $text = "Paket sedang dalam perjalanan.";
+            $icon = "local_shipping"; $color = "purple";
+        } elseif($ord['status'] == 'rejected') {
+            $text = "Pesanan/Refund Ditolak oleh Penjual.";
+            $icon = "cancel"; $color = "red";
+        } elseif($ord['status'] == 'refunded') {
+            $text = "Pengajuan Refund Disetujui.";
+            $icon = "currency_exchange"; $color = "green";
+        } elseif($ord['status'] == 'finished') {
+            $text = "Pesanan Selesai. Terima kasih!";
+            $icon = "check_circle"; $color = "teal";
+        }
+
+        $notif_list[] = [
+            'type' => 'order',
+            'title' => $title,
+            'text' => $text,
+            'icon' => $icon,
+            'color' => $color,
+            'link' => 'my_orders.php',
+            'time' => strtotime($ord['order_date'])
+        ];
     }
-
-    $notif_list[] = [
-        'type' => 'order',
-        'title' => $title,
-        'text' => $text,
-        'icon' => $icon,
-        'color' => $color,
-        'link' => 'my_orders.php',
-        'time' => strtotime($ord['order_date'])
-    ];
 }
 
-// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+// Sort notifikasi berdasarkan waktu terbaru
 usort($notif_list, function($a, $b) {
     return $b['time'] - $a['time'];
 });
@@ -80,9 +85,14 @@ $total_notif = count($notif_list);
 // HITUNG ISI KERANJANG (If not already calculated)
 if(!isset($cart_count)) {
     $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
-    $cart_data = mysqli_fetch_assoc($query_cart);
-    $cart_count = $cart_data['total'] ?? 0;
+    if ($query_cart) {
+        $cart_data = mysqli_fetch_assoc($query_cart);
+        $cart_count = $cart_data['total'] ?? 0;
+    } else {
+        $cart_count = 0;
+    }
 }
+
 
 
 $buyer_name = $_SESSION['full_name'];
@@ -214,7 +224,7 @@ $total_notif = $total_chat_unread;
 
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
+        <div class="bg-white dark:bg-stone-900/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
@@ -227,8 +237,8 @@ $total_notif = $total_chat_unread;
                     <form action="" method="GET" class="w-full relative group">
                         <input type="text" name="s" placeholder="Cari buku, penulis..."
                                value="<?php echo isset($_GET['s']) ? $_GET['s'] : '' ?>"
-                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
-                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 group-focus-within:text-tan text-lg">search</span>
+                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
+                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 dark:text-stone-400 group-focus-within:text-tan text-lg">search</span>
                     </form>
                 </div>
 
@@ -316,10 +326,10 @@ $total_notif = $total_chat_unread;
 
     <main class="flex-1 pt-32 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full h-[calc(100vh-2rem)]">
 
-        <div class="bg-white rounded-[2.5rem] border border-tan/20 dark:border-stone-800 shadow-xl overflow-hidden h-full flex flex-col md:flex-row">
+        <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] border border-tan/20 dark:border-stone-800 shadow-xl overflow-hidden h-full flex flex-col md:flex-row">
 
-            <div class="w-full md:w-80 border-r border-tan/20 dark:border-stone-800 bg-gray-50/50 flex flex-col h-full <?= $active_chat ? 'hidden md:flex' : 'flex' ?>">
-                <div class="p-6 border-b border-tan/20 dark:border-stone-800 bg-white">
+            <div class="w-full md:w-80 border-r border-tan/20 dark:border-stone-800 bg-gray-50 dark:bg-stone-800/50 flex flex-col h-full <?= $active_chat ? 'hidden md:flex' : 'flex' ?>">
+                <div class="p-6 border-b border-tan/20 dark:border-stone-800 bg-white dark:bg-stone-900">
                     <h2 class="text-xl font-bold text-primary dark:text-sage">Pesan</h2>
                 </div>
 
@@ -327,7 +337,7 @@ $total_notif = $total_chat_unread;
                     <?php if(mysqli_num_rows($chat_list) > 0): ?>
                         <?php while($chat = mysqli_fetch_assoc($chat_list)):
                             $c_img = !empty($chat['profile_image']) ? "../assets/uploads/profiles/".$chat['profile_image'] : "../assets/images/default_profile.png";
-                            $active = ($active_chat && $active_chat['id'] == $chat['id']) ? 'bg-sage/30 border-[var(--light-sage)]' : 'bg-white border-transparent hover:bg-gray-50';
+                            $active = ($active_chat && $active_chat['id'] == $chat['id']) ? 'bg-sage/30 border-[var(--light-sage)]' : 'bg-white dark:bg-stone-900 border-transparent hover:bg-gray-50 dark:bg-stone-800';
                         ?>
                         <a href="chat_list.php?uid=<?= $chat['id'] ?>" class="flex items-center gap-3 p-3 rounded-2xl border transition-all <?= $active ?>">
                             <div class="relative">
@@ -359,7 +369,7 @@ $total_notif = $total_chat_unread;
                 <?php if($active_chat):
                     $a_img = !empty($active_chat['profile_image']) ? "../assets/uploads/profiles/".$active_chat['profile_image'] : "../assets/images/default_profile.png";
                 ?>
-                    <div class="p-4 border-b border-tan/20 dark:border-stone-800 bg-white flex items-center gap-4 shadow-sm z-10">
+                    <div class="p-4 border-b border-tan/20 dark:border-stone-800 bg-white dark:bg-stone-900 flex items-center gap-4 shadow-sm z-10">
                         <a href="chat_list.php" class="md:hidden text-gray-500 hover:text-primary dark:text-sage">
                             <span class="material-symbols-outlined">arrow_back</span>
                         </a>
@@ -370,7 +380,7 @@ $total_notif = $total_chat_unread;
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto p-6 space-y-4 chat-area bg-white/50 backdrop-blur-sm" id="chatContainer">
+                    <div class="flex-1 overflow-y-auto p-6 space-y-4 chat-area bg-white dark:bg-stone-900/50 backdrop-blur-sm" id="chatContainer">
                         <?php
                         while($msg = mysqli_fetch_assoc($q_msgs)):
                             $is_me = ($msg['sender_id'] == $buyer_id);
@@ -387,11 +397,11 @@ $total_notif = $total_chat_unread;
                                     $b_img_chat = !empty($b_data['image']) ? "../assets/uploads/books/".$b_data['image'] : "../assets/images/book_placeholder.png";
 
                                     $product_card = '
-                                    <div class="mt-2 mb-1 p-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3 bg-white/90">
+                                    <div class="mt-2 mb-1 p-2 bg-gray-50 dark:bg-stone-800 rounded-lg border border-gray-200 flex items-center gap-3 bg-white dark:bg-stone-900/90">
                                         <img src="'.$b_img_chat.'" class="w-12 h-16 object-cover rounded-md">
                                         <div class="text-left">
                                             <p class="text-[10px] font-bold text-primary dark:text-sage uppercase">Produk Ditanyakan</p>
-                                            <p class="text-xs font-bold text-gray-800 line-clamp-1">'.$b_data['title'].'</p>
+                                            <p class="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-1">'.$b_data['title'].'</p>
                                             <p class="text-xs text-chocolate dark:text-tan font-bold">Rp '.number_format($b_data['sell_price'],0,',','.').'</p>
                                         </div>
                                     </div>';
@@ -413,7 +423,7 @@ $total_notif = $total_chat_unread;
                         <?php endwhile; ?>
                     </div>
 
-                    <div class="bg-white border-t border-tan/20 dark:border-stone-800 relative z-20">
+                    <div class="bg-white dark:bg-stone-900 border-t border-tan/20 dark:border-stone-800 relative z-20">
 
                         <?php if ($context_book):
                             $b_img = !empty($context_book['image']) ? "../assets/uploads/books/".$context_book['image'] : "../assets/images/book_placeholder.png";
@@ -443,7 +453,7 @@ $total_notif = $total_chat_unread;
                             ?>
 
                             <div class="flex-1 relative">
-                                <input type="text" name="message" value="<?= $default_msg ?>" placeholder="Tulis pesan..." class="w-full pl-4 pr-10 py-3 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm" autocomplete="off" autofocus>
+                                <input type="text" name="message" value="<?= $default_msg ?>" placeholder="Tulis pesan..." class="w-full pl-4 pr-10 py-3 rounded-2xl bg-gray-50 dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm" autocomplete="off" autofocus>
                                 <span class="material-symbols-outlined absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-primary dark:text-sage">sentiment_satisfied</span>
                             </div>
 
@@ -491,24 +501,7 @@ $total_notif = $total_chat_unread;
         }
     </script>
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

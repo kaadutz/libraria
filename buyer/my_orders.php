@@ -184,7 +184,7 @@ $total_notif = count($notif_list);
 
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
+        <div class="bg-white dark:bg-stone-900/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
@@ -197,8 +197,8 @@ $total_notif = count($notif_list);
                     <form action="" method="GET" class="w-full relative group">
                         <input type="text" name="s" placeholder="Cari buku, penulis..."
                                value="<?php echo isset($_GET['s']) ? $_GET['s'] : '' ?>"
-                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
-                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 group-focus-within:text-tan text-lg">search</span>
+                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
+                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 dark:text-stone-400 group-focus-within:text-tan text-lg">search</span>
                     </form>
                 </div>
 
@@ -315,7 +315,7 @@ $total_notif = count($notif_list);
                     $chat_link = "chat_list.php?uid=" . $seller_id_chat . "&msg=" . urlencode($chat_msg);
 
                     // Logic Status
-                    $status_class = 'bg-gray-100 text-gray-600';
+                    $status_class = 'bg-gray-100 text-gray-600 dark:text-gray-300';
                     $status_label = ucfirst($order['status']);
                     $need_upload = ($order['status'] == 'pending' && empty($order['payment_proof']));
 
@@ -326,14 +326,14 @@ $total_notif = count($notif_list);
                     elseif($order['status'] == 'finished') { $status_class = 'bg-green-100 text-green-700'; $status_label = 'Selesai'; }
                     elseif($order['status'] == 'rejected') { $status_class = 'bg-red-100 text-red-700'; $status_label = 'Ditolak'; }
                     elseif($order['status'] == 'refund') { $status_class = 'bg-orange-100 text-orange-700'; $status_label = 'Proses Refund'; }
-                    elseif($order['status'] == 'refunded') { $status_class = 'bg-stone-200 text-stone-600 line-through'; $status_label = 'Refund Selesai'; }
+                    elseif($order['status'] == 'refunded') { $status_class = 'bg-stone-200 text-stone-600 dark:text-stone-300 line-through'; $status_label = 'Refund Selesai'; }
 
                     $tracking_link = "#";
                     if($order['expedition_name'] == 'JNE') $tracking_link = "https://www.jne.co.id/";
                     elseif($order['expedition_name'] == 'J&T') $tracking_link = "https://jet.co.id/track";
                     elseif($order['expedition_name'] == 'Shopee Express') $tracking_link = "https://spx.co.id/";
                 ?>
-                <div class="bg-white rounded-[2.5rem] p-6 border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-lg transition-all relative overflow-hidden">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-6 border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-lg transition-all relative overflow-hidden">
 
                     <?php if($order['status'] == 'refund'):
                         $q_seller = mysqli_query($conn, "SELECT u.address, u.full_name FROM users u JOIN order_items oi ON u.id = oi.seller_id WHERE oi.order_id = '$order_id' LIMIT 1");
@@ -407,7 +407,7 @@ $total_notif = count($notif_list);
                                 <span class="material-symbols-outlined text-sm">chat</span> Chat Penjual
                             </a>
 
-                            <a href="invoice.php?id=<?= $order['id'] ?>" target="_blank" class="px-5 py-2.5 bg-white border border-tan/20 dark:border-stone-800 text-primary dark:text-sage font-bold rounded-xl hover:bg-gray-50 transition-all text-sm flex items-center justify-center gap-2 shadow-sm">
+                            <a href="invoice.php?id=<?= $order['id'] ?>" target="_blank" class="px-5 py-2.5 bg-white dark:bg-stone-900 border border-tan/20 dark:border-stone-800 text-primary dark:text-sage font-bold rounded-xl hover:bg-gray-50 dark:bg-stone-800 transition-all text-sm flex items-center justify-center gap-2 shadow-sm">
                                 <span class="material-symbols-outlined text-sm">print</span> Struk
                             </a>
 
@@ -440,9 +440,9 @@ $total_notif = count($notif_list);
                     <?php if(($order['status'] == 'shipping' || $order['status'] == 'finished') && !empty($order['tracking_number'])): ?>
                         <div class="mt-4 pt-4 border-t border-dashed border-gray-200 text-sm flex justify-between items-center bg-yellow-50 p-3 rounded-xl border border-yellow-100">
                             <div>
-                                <span class="font-bold text-primary dark:text-sage"><?= $order['expedition_name'] ?></span> - <span class="font-mono text-stone-600"><?= $order['tracking_number'] ?></span>
+                                <span class="font-bold text-primary dark:text-sage"><?= $order['expedition_name'] ?></span> - <span class="font-mono text-stone-600 dark:text-stone-300"><?= $order['tracking_number'] ?></span>
                             </div>
-                            <a href="<?= $tracking_link ?>" target="_blank" class="px-3 py-1 bg-white border border-yellow-200 text-yellow-700 text-xs font-bold rounded-lg hover:bg-yellow-100 flex items-center gap-1 shadow-sm">
+                            <a href="<?= $tracking_link ?>" target="_blank" class="px-3 py-1 bg-white dark:bg-stone-900 border border-yellow-200 text-yellow-700 text-xs font-bold rounded-lg hover:bg-yellow-100 flex items-center gap-1 shadow-sm">
                                 Lacak <span class="material-symbols-outlined text-xs">open_in_new</span>
                             </a>
                         </div>
@@ -451,10 +451,10 @@ $total_notif = count($notif_list);
                 </div>
                 <?php endwhile; ?>
             <?php else: ?>
-                <div class="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-tan/20 dark:border-stone-800">
+                <div class="text-center py-20 bg-white dark:bg-stone-900 rounded-[2.5rem] border-2 border-dashed border-tan/20 dark:border-stone-800">
                     <span class="material-symbols-outlined text-6xl text-stone-500 dark:text-stone-400 opacity-50 mb-4">shopping_cart_off</span>
                     <h3 class="text-xl font-bold text-stone-800 dark:text-stone-200">Belum ada pesanan</h3>
-                    <p class="text-stone-500 mb-6">Yuk mulai belanja buku favoritmu!</p>
+                    <p class="text-stone-500 dark:text-stone-400 mb-6">Yuk mulai belanja buku favoritmu!</p>
                     <a href="index.php" class="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-chocolate transition-all shadow-lg">Belanja Sekarang</a>
                 </div>
             <?php endif; ?>
@@ -465,17 +465,17 @@ $total_notif = count($notif_list);
 
     <div id="uploadModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[70]">
         <div class="modal-overlay absolute w-full h-full bg-black/50 backdrop-blur-sm" onclick="toggleModal('uploadModal')"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 p-8 transform scale-95 transition-all">
+        <div class="modal-container bg-white dark:bg-stone-900 w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 p-8 transform scale-95 transition-all">
             <h3 class="text-xl font-bold text-primary dark:text-sage mb-2 title-font">Upload Bukti Bayar</h3>
             <p class="text-sm text-gray-500 mb-6">Invoice: <span id="modalInvoice" class="font-bold text-chocolate dark:text-tan"></span></p>
             <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="order_id" id="modalOrderId">
                 <div class="mb-6">
                     <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Pilih Foto / Screenshot</label>
-                    <input type="file" name="payment_proof" required accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sage file:text-primary dark:text-sage hover:file:bg-tan hover:file:text-white transition-all cursor-pointer bg-gray-50 rounded-xl border border-tan/20 dark:border-stone-800">
+                    <input type="file" name="payment_proof" required accept="image/*" class="w-full text-sm text-stone-500 dark:text-stone-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sage file:text-primary dark:text-sage hover:file:bg-tan hover:file:text-white transition-all cursor-pointer bg-gray-50 dark:bg-stone-800 rounded-xl border border-tan/20 dark:border-stone-800">
                 </div>
                 <div class="flex gap-3">
-                    <button type="button" onclick="toggleModal('uploadModal')" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                    <button type="button" onclick="toggleModal('uploadModal')" class="flex-1 py-3 bg-gray-100 text-gray-600 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
                     <button type="submit" name="upload_proof" class="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-colors shadow-md">Upload</button>
                 </div>
             </form>
@@ -529,24 +529,7 @@ $total_notif = count($notif_list);
         }
     </script>
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

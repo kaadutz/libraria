@@ -237,7 +237,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
 
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-8 bg-white dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
@@ -252,11 +252,11 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
 
-<button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-tan/20 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary dark:text-sage hover:shadow-md transition-all relative">
+<button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white dark:bg-stone-900 border border-tan/20 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary dark:text-sage hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?><span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span><?php endif; ?>
                 </button>
-                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center"><h4 class="font-bold text-primary dark:text-sage">Notifikasi</h4></div>
                     <div class="max-h-64 overflow-y-auto">
                         <?php if($total_new_orders > 0): ?>
@@ -268,7 +268,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         <?php if($total_notif == 0): ?><div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi.</div><?php endif; ?>
                     </div>
                 </div>
-                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
+                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white dark:bg-stone-900 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
                     <div class="w-9 h-9 rounded-full bg-tan text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <div class="text-left hidden sm:block">
                         <p class="text-xs font-bold leading-none title-font"><?= $seller_name ?></p>
@@ -276,7 +276,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     </div>
                     <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
                 </button>
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-sage/30 hover:text-primary dark:text-sage transition-colors bg-sage/20 font-bold"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
                     <div class="border-t border-gray-100 my-1"></div>
                     <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
@@ -287,10 +287,10 @@ $total_notif = $total_new_orders + $total_unread_chat;
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-aos="fade-up">
 
             <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-24 bg-primary"></div>
 
-                    <div class="relative z-10 w-32 h-32 mx-auto rounded-full p-1 bg-white border-4 border-[var(--cream-bg)] mb-4">
+                    <div class="relative z-10 w-32 h-32 mx-auto rounded-full p-1 bg-white dark:bg-stone-900 border-4 border-[var(--cream-bg)] mb-4">
                         <img src="<?= $profile_pic ?>" id="previewImg" class="w-full h-full rounded-full object-cover">
                         <label for="uploadPhoto" class="absolute bottom-0 right-0 w-8 h-8 bg-tan text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-chocolate transition-colors shadow-lg">
                             <span class="material-symbols-outlined text-sm">edit</span>
@@ -300,8 +300,8 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     <h2 class="text-xl font-bold text-stone-800 dark:text-stone-200 title-font"><?= $seller_name ?></h2>
                     <p class="text-sm text-stone-500 dark:text-stone-400 font-medium mb-4">Seller Account</p>
 
-                    <div class="flex justify-center gap-2 text-xs text-stone-500 mb-6">
-                        <span class="px-3 py-1 rounded-full bg-stone-100 border border-stone-200">Bergabung: <?= date('M Y', strtotime($user['created_at'])) ?></span>
+                    <div class="flex justify-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-6">
+                        <span class="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 dark:border-stone-700">Bergabung: <?= date('M Y', strtotime($user['created_at'])) ?></span>
                     </div>
 
                     <div class="border-t border-stone-100 pt-4 text-left space-y-3">
@@ -312,7 +312,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         <div>
                             <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Rekening Utama</p>
                             <p class="text-xs font-medium text-stone-800 dark:text-stone-200 truncate"><?= $user['bank_info'] ? $user['bank_info'] : '-' ?></p>
-                            <p class="text-xs font-mono text-stone-500"><?= $user['bank_account'] ? $user['bank_account'] : '' ?></p>
+                            <p class="text-xs font-mono text-stone-500 dark:text-stone-400"><?= $user['bank_account'] ? $user['bank_account'] : '' ?></p>
                         </div>
                     </div>
                 </div>
@@ -320,7 +320,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
             <div class="lg:col-span-2 space-y-8">
 
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
                     <div class="flex items-center gap-3 mb-6 pb-4 border-b border-tan/20 dark:border-stone-800">
                         <span class="w-10 h-10 rounded-full bg-sage flex items-center justify-center text-primary dark:text-sage">
                             <span class="material-symbols-outlined">person_edit</span>
@@ -334,11 +334,11 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Nama Toko</label>
-                                <input type="text" name="full_name" value="<?= $user['full_name'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                                <input type="text" name="full_name" value="<?= $user['full_name'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Email</label>
-                                <input type="email" name="email" value="<?= $user['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                                <input type="email" name="email" value="<?= $user['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                             </div>
                         </div>
 
@@ -350,17 +350,17 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Nama Bank & Pemilik</label>
-                                <input type="text" name="bank_info" value="<?= isset($user['bank_info']) ? htmlspecialchars($user['bank_info']) : '' ?>" placeholder="Cth: BCA a.n Siti Aminah" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                                <input type="text" name="bank_info" value="<?= isset($user['bank_info']) ? htmlspecialchars($user['bank_info']) : '' ?>" placeholder="Cth: BCA a.n Siti Aminah" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Nomor Rekening</label>
-                                <input type="number" name="bank_account" value="<?= isset($user['bank_account']) ? htmlspecialchars($user['bank_account']) : '' ?>" placeholder="Cth: 1234567890" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                                <input type="number" name="bank_account" value="<?= isset($user['bank_account']) ? htmlspecialchars($user['bank_account']) : '' ?>" placeholder="Cth: 1234567890" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Alamat Toko</label>
-                            <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm resize-none"><?= isset($user['address']) ? $user['address'] : '' ?></textarea>
+                            <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm resize-none"><?= isset($user['address']) ? $user['address'] : '' ?></textarea>
                         </div>
 
                         <div class="flex justify-end">
@@ -371,7 +371,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     </form>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
                     <div class="flex items-center gap-3 mb-6 pb-4 border-b border-tan/20 dark:border-stone-800">
                         <span class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600">
                             <span class="material-symbols-outlined">lock</span>
@@ -382,16 +382,16 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     <form method="POST" class="space-y-5">
                         <div>
                             <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Password Lama</label>
-                            <input type="password" name="old_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                            <input type="password" name="old_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Password Baru</label>
-                                <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                                <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Konfirmasi Password Baru</label>
-                                <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 text-sm">
+                                <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 text-sm">
                             </div>
                         </div>
                         <div class="flex justify-end">
@@ -487,24 +487,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 </script>
 
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

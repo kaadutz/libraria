@@ -12,24 +12,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 
 $buyer_id = $_SESSION['user_id'];
 
+
 // --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
 $notif_list = [];
 
 // A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
 $q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
-while($msg = mysqli_fetch_assoc($q_msg_notif)){
-    $notif_list[] = [
-        'type' => 'chat',
-        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
-        'text' => substr($msg['message'], 0, 25) . '...',
-        'icon' => 'chat',
-        'color' => 'blue',
-        'link' => 'chat_list.php',
-        'time' => strtotime($msg['created_at'])
-    ];
+if ($q_msg_notif) {
+    while($msg = mysqli_fetch_assoc($q_msg_notif)){
+        $notif_list[] = [
+            'type' => 'chat',
+            'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+            'text' => substr($msg['message'], 0, 25) . '...',
+            'icon' => 'chat',
+            'color' => 'blue',
+            'link' => 'chat_list.php',
+            'time' => strtotime($msg['created_at'])
+        ];
+    }
 }
 
-// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+// B. Ambil 5 Status Pesanan Terakhir
 $q_order_notif = mysqli_query($conn, "
     SELECT invoice_number, status, order_date
     FROM orders
@@ -38,39 +41,41 @@ $q_order_notif = mysqli_query($conn, "
     ORDER BY order_date DESC LIMIT 5
 ");
 
-while($ord = mysqli_fetch_assoc($q_order_notif)){
-    $title = $ord['invoice_number'];
-    $text = ""; $icon = ""; $color = "";
+if ($q_order_notif) {
+    while($ord = mysqli_fetch_assoc($q_order_notif)){
+        $title = $ord['invoice_number'];
+        $text = ""; $icon = ""; $color = "";
 
-    if($ord['status'] == 'approved') {
-        $text = "Pesanan Diterima Penjual. Segera dikemas.";
-        $icon = "inventory_2"; $color = "indigo";
-    } elseif($ord['status'] == 'shipping') {
-        $text = "Paket sedang dalam perjalanan.";
-        $icon = "local_shipping"; $color = "purple";
-    } elseif($ord['status'] == 'rejected') {
-        $text = "Pesanan/Refund Ditolak oleh Penjual.";
-        $icon = "cancel"; $color = "red";
-    } elseif($ord['status'] == 'refunded') {
-        $text = "Pengajuan Refund Disetujui.";
-        $icon = "currency_exchange"; $color = "green";
-    } elseif($ord['status'] == 'finished') {
-        $text = "Pesanan Selesai. Terima kasih!";
-        $icon = "check_circle"; $color = "teal";
+        if($ord['status'] == 'approved') {
+            $text = "Pesanan Diterima Penjual. Segera dikemas.";
+            $icon = "inventory_2"; $color = "indigo";
+        } elseif($ord['status'] == 'shipping') {
+            $text = "Paket sedang dalam perjalanan.";
+            $icon = "local_shipping"; $color = "purple";
+        } elseif($ord['status'] == 'rejected') {
+            $text = "Pesanan/Refund Ditolak oleh Penjual.";
+            $icon = "cancel"; $color = "red";
+        } elseif($ord['status'] == 'refunded') {
+            $text = "Pengajuan Refund Disetujui.";
+            $icon = "currency_exchange"; $color = "green";
+        } elseif($ord['status'] == 'finished') {
+            $text = "Pesanan Selesai. Terima kasih!";
+            $icon = "check_circle"; $color = "teal";
+        }
+
+        $notif_list[] = [
+            'type' => 'order',
+            'title' => $title,
+            'text' => $text,
+            'icon' => $icon,
+            'color' => $color,
+            'link' => 'my_orders.php',
+            'time' => strtotime($ord['order_date'])
+        ];
     }
-
-    $notif_list[] = [
-        'type' => 'order',
-        'title' => $title,
-        'text' => $text,
-        'icon' => $icon,
-        'color' => $color,
-        'link' => 'my_orders.php',
-        'time' => strtotime($ord['order_date'])
-    ];
 }
 
-// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+// Sort notifikasi berdasarkan waktu terbaru
 usort($notif_list, function($a, $b) {
     return $b['time'] - $a['time'];
 });
@@ -80,9 +85,14 @@ $total_notif = count($notif_list);
 // HITUNG ISI KERANJANG (If not already calculated)
 if(!isset($cart_count)) {
     $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
-    $cart_data = mysqli_fetch_assoc($query_cart);
-    $cart_count = $cart_data['total'] ?? 0;
+    if ($query_cart) {
+        $cart_data = mysqli_fetch_assoc($query_cart);
+        $cart_count = $cart_data['total'] ?? 0;
+    } else {
+        $cart_count = 0;
+    }
 }
+
 
 
 $swal_alert = ""; // Variabel untuk menampung script SweetAlert
@@ -251,7 +261,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
+        <div class="bg-white dark:bg-stone-900/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-tan/20 dark:border-stone-800 shadow-sm max-w-7xl mx-auto px-4 py-3 transition-colors duration-300">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
@@ -264,8 +274,8 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                     <form action="" method="GET" class="w-full relative group">
                         <input type="text" name="s" placeholder="Cari buku, penulis..."
                                value="<?php echo isset($_GET['s']) ? $_GET['s'] : '' ?>"
-                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
-                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 group-focus-within:text-tan text-lg">search</span>
+                               class="w-full pl-10 pr-4 py-2 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:focus:bg-stone-900 focus:border-tan dark:focus:border-stone-700 focus:ring-0 transition-all text-sm shadow-inner group-hover:bg-white dark:group-hover:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder-stone-500">
+                        <span class="material-symbols-outlined absolute left-3 top-2 text-stone-500 dark:text-stone-400 group-focus-within:text-tan text-lg">search</span>
                     </form>
                 </div>
 
@@ -358,12 +368,12 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
         <div class="flex flex-col lg:flex-row gap-8" data-aos="fade-up">
 
             <div class="lg:w-1/3 space-y-6">
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-24 bg-primary opacity-10"></div>
                     <div class="absolute -right-10 -top-10 w-40 h-40 bg-sage rounded-full blur-3xl opacity-30"></div>
 
                     <div class="relative z-10">
-                        <div class="w-32 h-32 mx-auto rounded-full p-1 bg-white border-4 border-[var(--cream-bg)] shadow-lg mb-4">
+                        <div class="w-32 h-32 mx-auto rounded-full p-1 bg-white dark:bg-stone-900 border-4 border-[var(--cream-bg)] shadow-lg mb-4">
                             <img src="<?= $profile_pic ?>" id="previewImg" class="w-full h-full rounded-full object-cover">
                         </div>
                         <h2 class="text-xl font-bold text-stone-800 dark:text-stone-200"><?= $user['full_name'] ?></h2>
@@ -377,10 +387,10 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                 </div>
 
                 <div class="bg-primary text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
-                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white dark:bg-stone-900/10 rounded-full blur-2xl"></div>
                     <h4 class="font-bold text-lg mb-2">Butuh Bantuan?</h4>
                     <p class="text-xs text-white/80 mb-4">Jika Anda mengalami kendala dengan akun Anda, silakan hubungi kami.</p>
-                    <a href="help.php" class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition-colors">
+                    <a href="help.php" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-900/20 hover:bg-white dark:bg-stone-900/30 rounded-xl text-xs font-bold transition-colors">
                         <span class="material-symbols-outlined text-sm">support_agent</span> Hubungi Admin
                     </a>
                 </div>
@@ -388,7 +398,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
             <div class="lg:w-2/3 space-y-8">
 
-                <form method="POST" enctype="multipart/form-data" class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
+                <form method="POST" enctype="multipart/form-data" class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
                     <h3 class="text-xl font-bold text-primary dark:text-sage mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined">edit_square</span> Edit Informasi
                     </h3>
@@ -396,27 +406,27 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Nama Lengkap</label>
-                            <input type="text" name="full_name" value="<?= $user['full_name'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200" required>
+                            <input type="text" name="full_name" value="<?= $user['full_name'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200" required>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Email</label>
-                            <input type="email" name="email" value="<?= $user['email'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200" required>
+                            <input type="email" name="email" value="<?= $user['email'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200" required>
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">NIK / Identitas</label>
-                            <input type="number" name="nik" value="<?= $user['nik'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200">
+                            <input type="number" name="nik" value="<?= $user['nik'] ?>" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200">
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Ganti Foto Profil</label>
-                            <input type="file" name="profile_image" id="fileInput" accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sage file:text-primary dark:text-sage hover:file:bg-tan hover:file:text-white transition-all cursor-pointer">
+                            <input type="file" name="profile_image" id="fileInput" accept="image/*" class="w-full text-sm text-stone-500 dark:text-stone-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sage file:text-primary dark:text-sage hover:file:bg-tan hover:file:text-white transition-all cursor-pointer">
                         </div>
                     </div>
 
                     <div class="mb-8">
                         <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Alamat Lengkap</label>
-                        <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200"><?= $user['address'] ?></textarea>
+                        <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-800 dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm font-bold text-stone-800 dark:text-stone-200"><?= $user['address'] ?></textarea>
                     </div>
 
                     <div class="text-right">
@@ -426,7 +436,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                     </div>
                 </form>
 
-                <form method="POST" class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow relative overflow-hidden">
+                <form method="POST" class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow relative overflow-hidden">
                     <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-red-50 rounded-full blur-3xl opacity-50"></div>
 
                     <h3 class="text-xl font-bold text-primary dark:text-sage mb-6 flex items-center gap-2 relative z-10">
@@ -436,16 +446,16 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 relative z-10">
                         <div>
                             <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Password Baru</label>
-                            <input type="password" name="new_password" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
+                            <input type="password" name="new_password" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase mb-2">Konfirmasi Password</label>
-                            <input type="password" name="confirm_password" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
+                            <input type="password" name="confirm_password" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm" placeholder="••••••••" required>
                         </div>
                     </div>
 
                     <div class="text-right relative z-10">
-                        <button type="submit" name="change_password" class="px-8 py-3 bg-white border border-tan/20 dark:border-stone-800 text-primary dark:text-sage font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center gap-2 ml-auto">
+                        <button type="submit" name="change_password" class="px-8 py-3 bg-white dark:bg-stone-900 border border-tan/20 dark:border-stone-800 text-primary dark:text-sage font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center gap-2 ml-auto">
                             <span class="material-symbols-outlined text-sm">key</span> Update Password
                         </button>
                     </div>
@@ -456,7 +466,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
     </main>
 
-    <footer class="bg-white border-t border-tan/20 dark:border-stone-800 py-10 mt-auto">
+    <footer class="bg-white dark:bg-stone-900 border-t border-tan/20 dark:border-stone-800 py-10 mt-auto">
         <div class="max-w-7xl mx-auto px-6 text-center">
             <h2 class="text-2xl font-bold text-primary dark:text-sage font-logo mb-2 tracking-widest">LIBRARIA</h2>
             <p class="text-xs text-stone-500 dark:text-stone-400 mb-6">Platform jual beli buku terpercaya untuk masa depan literasi.</p>
@@ -500,24 +510,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
     <?= $swal_alert ?>
 
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

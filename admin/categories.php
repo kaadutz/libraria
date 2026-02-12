@@ -135,7 +135,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
         
-        <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-10 bg-white dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
@@ -154,7 +154,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                     <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
 
-<button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
+<button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white dark:bg-stone-900 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
                     
                     <img src="<?= $profile_pic ?>" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
                     
@@ -165,7 +165,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                     <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <div class="px-4 py-2 border-b border-gray-100">
                         <p class="text-xs text-gray-500">Signed in as</p>
                         <p class="text-sm font-bold text-primary dark:text-sage truncate"><?= $admin_name ?></p>
@@ -195,7 +195,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                         <a href="manage_users.php" class="px-6 py-3 bg-chocolate text-white font-bold rounded-2xl hover:opacity-90 hover:shadow-lg transition-all title-font text-sm flex items-center gap-2">
                             <span class="material-symbols-outlined text-[18px]">group</span> Kelola User
                         </a>
-                        <a href="categories.php" class="px-6 py-3 bg-white/10 backdrop-blur-md text-white font-bold rounded-2xl hover:bg-white/20 transition-all border border-white/30 title-font text-sm flex items-center gap-2">
+                        <a href="categories.php" class="px-6 py-3 bg-white dark:bg-stone-900/10 backdrop-blur-md text-white font-bold rounded-2xl hover:bg-white dark:bg-stone-900/20 transition-all border border-white/30 title-font text-sm flex items-center gap-2">
                             <span class="material-symbols-outlined text-[18px]">category</span> Kategori
                         </a>
                     </div>
@@ -206,7 +206,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
             </section>
 
             <div class="col-span-12 lg:col-span-4 flex flex-col gap-5">
-                <div class="bg-white p-6 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="200">
+                <div class="bg-white dark:bg-stone-900 p-6 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="200">
                     <div class="w-14 h-14 bg-sage/40 rounded-2xl flex items-center justify-center text-primary dark:text-sage shadow-inner">
                         <span class="material-symbols-outlined text-3xl">group</span>
                     </div>
@@ -220,7 +220,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="300">
+                <div class="bg-white dark:bg-stone-900 p-6 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="300">
                     <div class="w-14 h-14 bg-tan/20 rounded-2xl flex items-center justify-center text-tan shadow-inner">
                         <span class="material-symbols-outlined text-3xl">category</span>
                     </div>
@@ -231,7 +231,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                 </div>
 
                 <div class="bg-tan p-6 rounded-[2rem] text-white flex items-center gap-5 shadow-lg shadow-[#B18143]/20 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="400">
-                    <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                    <div class="w-14 h-14 bg-white dark:bg-stone-900/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
                         <span class="material-symbols-outlined text-3xl">menu_book</span>
                     </div>
                     <div>
@@ -241,7 +241,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                 </div>
             </div>
 
-            <section class="col-span-12 bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow relative overflow-hidden" data-aos="fade-up" data-aos-delay="500">
+            <section class="col-span-12 bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow relative overflow-hidden" data-aos="fade-up" data-aos-delay="500">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 relative z-10 gap-4">
                     <div>
                         <h3 class="text-xl font-bold title-font mb-1 text-stone-800 dark:text-stone-200">Pengguna Terbaru</h3>
@@ -256,7 +256,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                 <div class="relative z-10 overflow-x-auto rounded-xl">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="text-stone-500 dark:text-stone-400 text-sm border-b border-tan/20 dark:border-stone-800 bg-stone-50/50">
+                            <tr class="text-stone-500 dark:text-stone-400 text-sm border-b border-tan/20 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/50">
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider">Nama Pengguna</th>
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider">Role</th>
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider">Bergabung</th>
@@ -276,7 +276,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                                 ?>
                                 <tr class="border-b border-tan/20 dark:border-stone-800 last:border-0 hover:bg-cream dark:bg-stone-800/50 transition-colors">
                                     <td class="py-4 px-4 font-bold flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-xs">
+                                        <div class="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 dark:text-stone-400 font-bold text-xs">
                                             <?= strtoupper(substr($usr['full_name'], 0, 1)) ?>
                                         </div>
                                         <?= $usr['full_name'] ?>
@@ -287,7 +287,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                                             <?= ucfirst($usr['role']) ?>
                                         </span>
                                     </td>
-                                    <td class="py-4 px-4 text-stone-500"><?= date('d M Y', strtotime($usr['created_at'])) ?></td>
+                                    <td class="py-4 px-4 text-stone-500 dark:text-stone-400"><?= date('d M Y', strtotime($usr['created_at'])) ?></td>
                                     <td class="py-4 px-4 text-center">
                                         <?php if($is_online): ?>
                                             <span class="inline-flex items-center gap-1.5 text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full text-xs border border-green-100">
@@ -298,7 +298,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                                                 Online
                                             </span>
                                         <?php else: ?>
-                                            <span class="inline-flex items-center gap-1.5 text-stone-500 font-bold bg-stone-100 px-3 py-1 rounded-full text-xs border border-stone-200">
+                                            <span class="inline-flex items-center gap-1.5 text-stone-500 dark:text-stone-400 font-bold bg-stone-100 px-3 py-1 rounded-full text-xs border border-stone-200 dark:border-stone-700">
                                                 <span class="w-2 h-2 rounded-full bg-stone-400"></span> Offline
                                             </span>
                                         <?php endif; ?>
@@ -382,24 +382,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
 </script>
 
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

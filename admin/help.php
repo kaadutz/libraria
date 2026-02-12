@@ -143,7 +143,7 @@ $faqs = [
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
 
-        <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-10 bg-white dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
@@ -162,7 +162,7 @@ $faqs = [
                     <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
 
-<button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
+<button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white dark:bg-stone-900 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
                     <img src="<?= $profile_pic ?>" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
                     <div class="text-left hidden sm:block">
                         <p class="text-xs font-bold leading-none title-font"><?= $admin_name ?></p>
@@ -171,7 +171,7 @@ $faqs = [
                     <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <div class="px-4 py-2 border-b border-gray-100">
                         <p class="text-xs text-gray-500">Signed in as</p>
                         <p class="text-sm font-bold text-primary dark:text-sage truncate"><?= $admin_name ?></p>
@@ -192,7 +192,7 @@ $faqs = [
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-aos="fade-up">
 
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow">
                     <h3 class="text-xl font-bold text-primary dark:text-sage mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined">quiz</span> Pertanyaan Umum
                     </h3>
@@ -205,7 +205,7 @@ $faqs = [
                                 <span class="material-symbols-outlined text-stone-500 dark:text-stone-400 icon-rotate transition-transform duration-300">expand_more</span>
                             </button>
                             <div class="faq-content">
-                                <div class="px-5 pb-5 pt-0 text-sm text-stone-500 dark:text-stone-400 leading-relaxed border-t border-dashed border-tan/20 dark:border-stone-800 bg-white p-4">
+                                <div class="px-5 pb-5 pt-0 text-sm text-stone-500 dark:text-stone-400 leading-relaxed border-t border-dashed border-tan/20 dark:border-stone-800 bg-white dark:bg-stone-900 p-4">
                                     <?= $faq['answer'] ?>
                                 </div>
                             </div>
@@ -217,11 +217,11 @@ $faqs = [
 
             <div class="space-y-6">
                 <div class="bg-primary text-white rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-stone-900/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
                     <div class="absolute bottom-0 left-0 w-24 h-24 bg-sage/20 rounded-full blur-2xl -ml-5 -mb-5"></div>
 
                     <div class="relative z-10">
-                        <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
+                        <div class="w-12 h-12 bg-white dark:bg-stone-900/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
                             <span class="material-symbols-outlined text-2xl">code</span>
                         </div>
                         <h3 class="text-xl font-bold mb-2 title-font">Kontak Developer</h3>
@@ -242,7 +242,7 @@ $faqs = [
                     </div>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] p-6 border border-tan/20 dark:border-stone-800 card-shadow text-center">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-6 border border-tan/20 dark:border-stone-800 card-shadow text-center">
                     <span class="material-symbols-outlined text-4xl text-sage mb-2">security</span>
                     <h4 class="font-bold text-primary dark:text-sage mb-1">Keamanan Data</h4>
                     <p class="text-xs text-stone-500 dark:text-stone-400">Pastikan selalu Log Out setelah selesai mengelola sistem.</p>
@@ -329,24 +329,7 @@ $faqs = [
 </script>
 
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

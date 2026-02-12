@@ -87,11 +87,33 @@ while($row = mysqli_fetch_assoc($q_chart)) {
     $chart_data[$row['month'] - 1] = $row['total'];
 }
 
-// --- 4. LOGIKA NOTIFIKASI ---
+
+// --- LOGIKA NOTIFIKASI SELLER ---
+// Pesanan Perlu Proses
+if(!isset($pending_count)) {
+    $q_pending = mysqli_query($conn, "
+        SELECT COUNT(DISTINCT o.id) as total
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        WHERE oi.seller_id = '$seller_id' AND (o.status = 'pending' OR o.status = 'waiting_approval' OR o.status = 'approved')
+    ");
+    if ($q_pending) {
+        $pending_count = mysqli_fetch_assoc($q_pending)['total'];
+    } else {
+        $pending_count = 0;
+    }
+}
 $total_new_orders = $pending_count;
+
+// Chat Belum Dibaca
 $query_unread = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$seller_id' AND is_read = 0");
-$total_unread_chat = mysqli_fetch_assoc($query_unread)['total'];
+if ($query_unread) {
+    $total_unread_chat = mysqli_fetch_assoc($query_unread)['total'];
+} else {
+    $total_unread_chat = 0;
+}
 $total_notif = $total_new_orders + $total_unread_chat;
+
 ?>
 
 <!DOCTYPE html>

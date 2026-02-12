@@ -12,24 +12,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
 
 $buyer_id = $_SESSION['user_id'];
 
+
 // --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
 $notif_list = [];
 
 // A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
 $q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
-while($msg = mysqli_fetch_assoc($q_msg_notif)){
-    $notif_list[] = [
-        'type' => 'chat',
-        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
-        'text' => substr($msg['message'], 0, 25) . '...',
-        'icon' => 'chat',
-        'color' => 'blue',
-        'link' => 'chat_list.php',
-        'time' => strtotime($msg['created_at'])
-    ];
+if ($q_msg_notif) {
+    while($msg = mysqli_fetch_assoc($q_msg_notif)){
+        $notif_list[] = [
+            'type' => 'chat',
+            'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+            'text' => substr($msg['message'], 0, 25) . '...',
+            'icon' => 'chat',
+            'color' => 'blue',
+            'link' => 'chat_list.php',
+            'time' => strtotime($msg['created_at'])
+        ];
+    }
 }
 
-// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+// B. Ambil 5 Status Pesanan Terakhir
 $q_order_notif = mysqli_query($conn, "
     SELECT invoice_number, status, order_date
     FROM orders
@@ -38,39 +41,41 @@ $q_order_notif = mysqli_query($conn, "
     ORDER BY order_date DESC LIMIT 5
 ");
 
-while($ord = mysqli_fetch_assoc($q_order_notif)){
-    $title = $ord['invoice_number'];
-    $text = ""; $icon = ""; $color = "";
+if ($q_order_notif) {
+    while($ord = mysqli_fetch_assoc($q_order_notif)){
+        $title = $ord['invoice_number'];
+        $text = ""; $icon = ""; $color = "";
 
-    if($ord['status'] == 'approved') {
-        $text = "Pesanan Diterima Penjual. Segera dikemas.";
-        $icon = "inventory_2"; $color = "indigo";
-    } elseif($ord['status'] == 'shipping') {
-        $text = "Paket sedang dalam perjalanan.";
-        $icon = "local_shipping"; $color = "purple";
-    } elseif($ord['status'] == 'rejected') {
-        $text = "Pesanan/Refund Ditolak oleh Penjual.";
-        $icon = "cancel"; $color = "red";
-    } elseif($ord['status'] == 'refunded') {
-        $text = "Pengajuan Refund Disetujui.";
-        $icon = "currency_exchange"; $color = "green";
-    } elseif($ord['status'] == 'finished') {
-        $text = "Pesanan Selesai. Terima kasih!";
-        $icon = "check_circle"; $color = "teal";
+        if($ord['status'] == 'approved') {
+            $text = "Pesanan Diterima Penjual. Segera dikemas.";
+            $icon = "inventory_2"; $color = "indigo";
+        } elseif($ord['status'] == 'shipping') {
+            $text = "Paket sedang dalam perjalanan.";
+            $icon = "local_shipping"; $color = "purple";
+        } elseif($ord['status'] == 'rejected') {
+            $text = "Pesanan/Refund Ditolak oleh Penjual.";
+            $icon = "cancel"; $color = "red";
+        } elseif($ord['status'] == 'refunded') {
+            $text = "Pengajuan Refund Disetujui.";
+            $icon = "currency_exchange"; $color = "green";
+        } elseif($ord['status'] == 'finished') {
+            $text = "Pesanan Selesai. Terima kasih!";
+            $icon = "check_circle"; $color = "teal";
+        }
+
+        $notif_list[] = [
+            'type' => 'order',
+            'title' => $title,
+            'text' => $text,
+            'icon' => $icon,
+            'color' => $color,
+            'link' => 'my_orders.php',
+            'time' => strtotime($ord['order_date'])
+        ];
     }
-
-    $notif_list[] = [
-        'type' => 'order',
-        'title' => $title,
-        'text' => $text,
-        'icon' => $icon,
-        'color' => $color,
-        'link' => 'my_orders.php',
-        'time' => strtotime($ord['order_date'])
-    ];
 }
 
-// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+// Sort notifikasi berdasarkan waktu terbaru
 usort($notif_list, function($a, $b) {
     return $b['time'] - $a['time'];
 });
@@ -80,9 +85,14 @@ $total_notif = count($notif_list);
 // HITUNG ISI KERANJANG (If not already calculated)
 if(!isset($cart_count)) {
     $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
-    $cart_data = mysqli_fetch_assoc($query_cart);
-    $cart_count = $cart_data['total'] ?? 0;
+    if ($query_cart) {
+        $cart_data = mysqli_fetch_assoc($query_cart);
+        $cart_count = $cart_data['total'] ?? 0;
+    } else {
+        $cart_count = 0;
+    }
 }
+
 
 
 $buyer_name = $_SESSION['full_name'];

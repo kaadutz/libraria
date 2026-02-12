@@ -2,24 +2,27 @@
 session_start();
 include '../config/db.php';
 
+
 // --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
 $notif_list = [];
 
 // A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
 $q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
-while($msg = mysqli_fetch_assoc($q_msg_notif)){
-    $notif_list[] = [
-        'type' => 'chat',
-        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
-        'text' => substr($msg['message'], 0, 25) . '...',
-        'icon' => 'chat',
-        'color' => 'blue',
-        'link' => 'chat_list.php',
-        'time' => strtotime($msg['created_at'])
-    ];
+if ($q_msg_notif) {
+    while($msg = mysqli_fetch_assoc($q_msg_notif)){
+        $notif_list[] = [
+            'type' => 'chat',
+            'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
+            'text' => substr($msg['message'], 0, 25) . '...',
+            'icon' => 'chat',
+            'color' => 'blue',
+            'link' => 'chat_list.php',
+            'time' => strtotime($msg['created_at'])
+        ];
+    }
 }
 
-// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
+// B. Ambil 5 Status Pesanan Terakhir
 $q_order_notif = mysqli_query($conn, "
     SELECT invoice_number, status, order_date
     FROM orders
@@ -28,39 +31,41 @@ $q_order_notif = mysqli_query($conn, "
     ORDER BY order_date DESC LIMIT 5
 ");
 
-while($ord = mysqli_fetch_assoc($q_order_notif)){
-    $title = $ord['invoice_number'];
-    $text = ""; $icon = ""; $color = "";
+if ($q_order_notif) {
+    while($ord = mysqli_fetch_assoc($q_order_notif)){
+        $title = $ord['invoice_number'];
+        $text = ""; $icon = ""; $color = "";
 
-    if($ord['status'] == 'approved') {
-        $text = "Pesanan Diterima Penjual. Segera dikemas.";
-        $icon = "inventory_2"; $color = "indigo";
-    } elseif($ord['status'] == 'shipping') {
-        $text = "Paket sedang dalam perjalanan.";
-        $icon = "local_shipping"; $color = "purple";
-    } elseif($ord['status'] == 'rejected') {
-        $text = "Pesanan/Refund Ditolak oleh Penjual.";
-        $icon = "cancel"; $color = "red";
-    } elseif($ord['status'] == 'refunded') {
-        $text = "Pengajuan Refund Disetujui.";
-        $icon = "currency_exchange"; $color = "green";
-    } elseif($ord['status'] == 'finished') {
-        $text = "Pesanan Selesai. Terima kasih!";
-        $icon = "check_circle"; $color = "teal";
+        if($ord['status'] == 'approved') {
+            $text = "Pesanan Diterima Penjual. Segera dikemas.";
+            $icon = "inventory_2"; $color = "indigo";
+        } elseif($ord['status'] == 'shipping') {
+            $text = "Paket sedang dalam perjalanan.";
+            $icon = "local_shipping"; $color = "purple";
+        } elseif($ord['status'] == 'rejected') {
+            $text = "Pesanan/Refund Ditolak oleh Penjual.";
+            $icon = "cancel"; $color = "red";
+        } elseif($ord['status'] == 'refunded') {
+            $text = "Pengajuan Refund Disetujui.";
+            $icon = "currency_exchange"; $color = "green";
+        } elseif($ord['status'] == 'finished') {
+            $text = "Pesanan Selesai. Terima kasih!";
+            $icon = "check_circle"; $color = "teal";
+        }
+
+        $notif_list[] = [
+            'type' => 'order',
+            'title' => $title,
+            'text' => $text,
+            'icon' => $icon,
+            'color' => $color,
+            'link' => 'my_orders.php',
+            'time' => strtotime($ord['order_date'])
+        ];
     }
-
-    $notif_list[] = [
-        'type' => 'order',
-        'title' => $title,
-        'text' => $text,
-        'icon' => $icon,
-        'color' => $color,
-        'link' => 'my_orders.php',
-        'time' => strtotime($ord['order_date'])
-    ];
 }
 
-// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
+// Sort notifikasi berdasarkan waktu terbaru
 usort($notif_list, function($a, $b) {
     return $b['time'] - $a['time'];
 });
@@ -70,9 +75,14 @@ $total_notif = count($notif_list);
 // HITUNG ISI KERANJANG (If not already calculated)
 if(!isset($cart_count)) {
     $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
-    $cart_data = mysqli_fetch_assoc($query_cart);
-    $cart_count = $cart_data['total'] ?? 0;
+    if ($query_cart) {
+        $cart_data = mysqli_fetch_assoc($query_cart);
+        $cart_count = $cart_data['total'] ?? 0;
+    } else {
+        $cart_count = 0;
+    }
 }
+
 
 
 
@@ -169,7 +179,7 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
 </head>
 <body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 transition-colors duration-500 antialiased selection:bg-tan selection:text-white overflow-x-hidden">
 
-    <div id="receiptArea" class="bg-white p-8 w-full max-w-sm shadow-2xl relative my-10 mx-auto">
+    <div id="receiptArea" class="bg-white dark:bg-stone-900 p-8 w-full max-w-sm shadow-2xl relative my-10 mx-auto">
         <div class="jagged-top"></div>
 
         <div class="stamp-paid">LUNAS</div>
@@ -185,7 +195,7 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
 
         <div class="border-b-2 border-dashed border-gray-300 mb-4"></div>
 
-        <div class="mb-4 text-[10px] font-struk text-gray-600 relative z-10">
+        <div class="mb-4 text-[10px] font-struk text-gray-600 dark:text-gray-300 relative z-10">
             <div class="flex justify-between"><span>Tgl : <?= date('d/m/Y') ?></span><span>Jam : <?= date('H:i') ?></span></div>
             <div class="flex justify-between mt-1"><span>Kasir : System</span><span>Pel : <?= substr($buyer_name, 0, 10) ?>...</span></div>
             <div class="mt-1">Ref : <?= $main_inv_num ?></div>
@@ -274,24 +284,7 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
         }
     </script>
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

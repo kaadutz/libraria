@@ -209,7 +209,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
 
-        <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-10 bg-white dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
@@ -224,7 +224,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
 
-<button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
+<button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white dark:bg-stone-900 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
                     <img src="<?= $profile_pic ?>" alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
                     <div class="text-left hidden sm:block">
                         <p class="text-xs font-bold leading-none title-font"><?= $admin_name ?></p>
@@ -232,7 +232,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     </div>
                     <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
                 </button>
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-primary dark:text-sage bg-sage/30 font-bold transition-colors"><span class="material-symbols-outlined text-[20px]">person</span> My Profile</a>
                     <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
@@ -242,12 +242,12 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             <div class="lg:col-span-1" data-aos="fade-up">
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-32 bg-primary z-0"></div>
                     <div class="absolute top-0 left-0 w-full h-32 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-20 z-0"></div>
 
                     <div class="relative z-10">
-                        <div class="w-32 h-32 mx-auto bg-white rounded-full p-2 mb-4 shadow-lg">
+                        <div class="w-32 h-32 mx-auto bg-white dark:bg-stone-900 rounded-full p-2 mb-4 shadow-lg">
                             <img src="<?= $profile_pic ?>" alt="Profile" class="w-full h-full rounded-full object-cover border-4 border-[var(--cream-bg)]">
                         </div>
 
@@ -272,7 +272,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 
             <div class="lg:col-span-2 space-y-8">
 
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow" data-aos="fade-up" data-aos-delay="100">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow" data-aos="fade-up" data-aos-delay="100">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-sage flex items-center justify-center text-primary dark:text-sage">
                             <span class="material-symbols-outlined">edit_note</span>
@@ -283,18 +283,18 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     <form action="" method="POST" enctype="multipart/form-data" class="space-y-5">
                         <div>
                             <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Foto Profil</label>
-                            <input type="file" name="profile_image" accept="image/*" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-chocolate">
+                            <input type="file" name="profile_image" accept="image/*" class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-chocolate">
                             <p class="text-[10px] text-gray-400 mt-1 ml-1">Format: JPG, PNG, GIF. Maks 2MB.</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Nama Lengkap</label>
-                                <input type="text" name="full_name" value="<?= $data['full_name'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all">
+                                <input type="text" name="full_name" value="<?= $data['full_name'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Email Address</label>
-                                <input type="email" name="email" value="<?= $data['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all">
+                                <input type="email" name="email" value="<?= $data['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all">
                             </div>
                         </div>
                         <div class="flex justify-end">
@@ -305,7 +305,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     </form>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow" data-aos="fade-up" data-aos-delay="200">
+                <div class="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-tan/20 dark:border-stone-800 card-shadow" data-aos="fade-up" data-aos-delay="200">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                             <span class="material-symbols-outlined">lock_reset</span>
@@ -316,16 +316,16 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     <form action="" method="POST" class="space-y-5">
                         <div>
                             <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Password Saat Ini</label>
-                            <input type="password" name="current_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all">
+                            <input type="password" name="current_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Password Baru</label>
-                                <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all">
+                                <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-stone-500 dark:text-stone-400 mb-1.5 ml-1">Konfirmasi Password</label>
-                                <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white focus:border-tan focus:ring-0 transition-all">
+                                <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl bg-cream dark:bg-stone-800 border border-transparent focus:bg-white dark:bg-stone-900 focus:border-tan focus:ring-0 transition-all">
                             </div>
                         </div>
                         <div class="flex justify-end">
@@ -372,24 +372,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 </script>
 
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>

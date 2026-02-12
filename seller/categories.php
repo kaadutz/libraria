@@ -163,7 +163,7 @@ $categories = mysqli_query($conn, $query);
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
 
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-8 bg-white dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-tan/20 dark:border-stone-800 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-sage text-primary dark:text-sage transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
@@ -180,7 +180,7 @@ $categories = mysqli_query($conn, $query);
                     <span class="material-icons-outlined text-xl">dark_mode</span>
                 </button>
 
-<button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-tan/20 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary dark:text-sage hover:shadow-md transition-all relative">
+<button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white dark:bg-stone-900 border border-tan/20 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary dark:text-sage hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
                         <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
@@ -188,7 +188,7 @@ $categories = mysqli_query($conn, $query);
                     <?php endif; ?>
                 </button>
 
-                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
                         <h4 class="font-bold text-primary dark:text-sage">Notifikasi</h4>
                         <?php if($total_notif > 0): ?>
@@ -200,7 +200,7 @@ $categories = mysqli_query($conn, $query);
                         <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:bg-stone-800 transition-colors">
                             <div class="p-2 bg-orange-100 text-orange-600 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
                             <div>
-                                <p class="text-sm font-bold text-gray-800">Pesanan Baru!</p>
+                                <p class="text-sm font-bold text-gray-800 dark:text-gray-200">Pesanan Baru!</p>
                                 <p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu konfirmasi.</p>
                             </div>
                         </a>
@@ -210,7 +210,7 @@ $categories = mysqli_query($conn, $query);
                         <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-cream dark:bg-stone-800 transition-colors">
                             <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
                             <div>
-                                <p class="text-sm font-bold text-gray-800">Pesan Masuk</p>
+                                <p class="text-sm font-bold text-gray-800 dark:text-gray-200">Pesan Masuk</p>
                                 <p class="text-xs text-gray-500">Anda memiliki <?= $total_unread_chat ?> pesan belum dibaca.</p>
                             </div>
                         </a>
@@ -222,7 +222,7 @@ $categories = mysqli_query($conn, $query);
                     </div>
                 </div>
 
-                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
+                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white dark:bg-stone-900 p-1.5 pr-4 rounded-full border border-tan/20 dark:border-stone-800 card-shadow hover:shadow-md transition-all focus:outline-none">
                     <div class="w-9 h-9 rounded-full bg-tan text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <div class="text-left hidden sm:block">
                         <p class="text-xs font-bold leading-none title-font"><?= $seller_name ?></p>
@@ -231,7 +231,7 @@ $categories = mysqli_query($conn, $query);
                     <span class="material-symbols-outlined text-[18px] text-stone-500 dark:text-stone-400">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-tan/20 dark:border-stone-800 py-2 hidden transform origin-top-right transition-all z-50">
                     <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-sage/30 hover:text-primary dark:text-sage transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
                     <div class="border-t border-gray-100 my-1"></div>
                     <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
@@ -246,7 +246,7 @@ $categories = mysqli_query($conn, $query);
                     Berikut adalah daftar kategori resmi yang tersedia di platform Libraria. Gunakan kategori ini saat menambahkan produk baru agar buku Anda mudah ditemukan pembeli.
                 </p>
             </div>
-            <div class="hidden md:flex items-center justify-center w-16 h-16 bg-white/10 rounded-full backdrop-blur-sm">
+            <div class="hidden md:flex items-center justify-center w-16 h-16 bg-white dark:bg-stone-900/10 rounded-full backdrop-blur-sm">
                 <span class="material-symbols-outlined text-4xl">category</span>
             </div>
         </div>
@@ -254,12 +254,12 @@ $categories = mysqli_query($conn, $query);
         <div class="mb-6 relative" data-aos="fade-up" data-aos-delay="100">
             <span class="material-symbols-outlined absolute left-4 top-3 text-stone-500 dark:text-stone-400">search</span>
             <input type="text" id="searchInput" onkeyup="searchCategory()" placeholder="Cari kategori..."
-                   class="w-full pl-12 pr-4 py-3 rounded-2xl bg-white border border-tan/20 dark:border-stone-800 focus:border-tan focus:ring-0 shadow-sm transition-all text-sm">
+                   class="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-stone-900 border border-tan/20 dark:border-stone-800 focus:border-tan focus:ring-0 shadow-sm transition-all text-sm">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoryGrid" data-aos="fade-up" data-aos-delay="200">
             <?php while($cat = mysqli_fetch_assoc($categories)): ?>
-            <div class="bg-white p-6 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow hover:-translate-y-1 transition-all group category-item">
+            <div class="bg-white dark:bg-stone-900 p-6 rounded-[2rem] border border-tan/20 dark:border-stone-800 card-shadow hover:-translate-y-1 transition-all group category-item">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-12 h-12 rounded-2xl bg-cream dark:bg-stone-800 flex items-center justify-center text-tan group-hover:bg-tan group-hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-2xl">menu_book</span>
@@ -331,24 +331,7 @@ $categories = mysqli_query($conn, $query);
 </script>
 
 
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        }
-    </script>
 
 
     <script>
