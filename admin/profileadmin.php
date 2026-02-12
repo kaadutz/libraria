@@ -18,42 +18,61 @@ if (isset($_POST['update_profile'])) {
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email     = mysqli_real_escape_string($conn, $_POST['email']);
     
-    // Cek Email
-    $check = mysqli_query($conn, "SELECT * FROM users WHERE email = '$email' AND id != '$user_id'");
-    if (mysqli_num_rows($check) > 0) {
-        $alert = "<script>alert('GAGAL: Email sudah digunakan pengguna lain!');</script>";
+    // 1. VALIDASI DUPLIKAT EMAIL
+    // Cek apakah email sudah dipakai user lain (selain user yang sedang login)
+    $check_duplicate = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email' AND id != '$user_id'");
+    
+    if (mysqli_num_rows($check_duplicate) > 0) {
+        // Jika ditemukan data, tampilkan Pop Up Gagal
+        $alert = "<script>
+            alert('GAGAL UPDATE: Email \'$email\' sudah digunakan oleh pengguna lain! Silakan gunakan email berbeda.');
+        </script>";
     } else {
-        // Update Text Data
-        $update = "UPDATE users SET full_name = '$full_name', email = '$email' WHERE id = '$user_id'";
-        mysqli_query($conn, $update);
-        $_SESSION['full_name'] = $full_name;
-
-        // Proses Upload Foto
-        if (!empty($_FILES['profile_image']['name'])) {
-            $target_dir = "../assets/uploads/profiles/";
-            
-            // Buat folder jika belum ada
-            if (!file_exists($target_dir)) {
-                mkdir($target_dir, 0777, true);
-            }
-
-            $file_extension = strtolower(pathinfo($_FILES["profile_image"]["name"], PATHINFO_EXTENSION));
-            $new_filename = "profile_" . $user_id . "_" . time() . "." . $file_extension;
-            $target_file = $target_dir . $new_filename;
-            
-            // Validasi Format
-            $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-            if (in_array($file_extension, $allowed)) {
-                if (move_uploaded_file($_FILES["profile_image"]["tmp_name"], $target_file)) {
-                    // Update DB dengan nama file baru
-                    mysqli_query($conn, "UPDATE users SET profile_image = '$new_filename' WHERE id = '$user_id'");
-                }
-            } else {
-                $alert = "<script>alert('Format file harus JPG, JPEG, atau PNG!');</script>";
-            }
-        }
+        // Jika aman, Lanjutkan Proses Update
         
-        $alert = "<script>alert('Profil Berhasil Diperbarui!'); window.location='profileadmin.php';</script>";
+        // Update Text Data Dulu
+        $update = "UPDATE users SET full_name = '$full_name', email = '$email' WHERE id = '$user_id'";
+        
+        if(mysqli_query($conn, $update)) {
+            $_SESSION['full_name'] = $full_name; // Update session nama
+            $alert = "<script>alert('Profil Berhasil Diperbarui!'); window.location='profileadmin.php';</script>";
+
+            // Proses Upload Foto (Hanya jika ada file yang diupload)
+            if (!empty($_FILES['profile_image']['name'])) {
+                $target_dir = "../assets/uploads/profiles/";
+                
+                // Buat folder jika belum ada
+                if (!file_exists($target_dir)) {
+                    mkdir($target_dir, 0777, true);
+                }
+
+                $file_extension = strtolower(pathinfo($_FILES["profile_image"]["name"], PATHINFO_EXTENSION));
+                $new_filename = "profile_" . $user_id . "_" . time() . "." . $file_extension;
+                $target_file = $target_dir . $new_filename;
+                
+                // Validasi Format
+                $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+                if (in_array($file_extension, $allowed)) {
+                    // Cek size (opsional, misal max 2MB)
+                    if ($_FILES["profile_image"]["size"] <= 2000000) { 
+                        if (move_uploaded_file($_FILES["profile_image"]["tmp_name"], $target_file)) {
+                            // Update DB dengan nama file baru
+                            mysqli_query($conn, "UPDATE users SET profile_image = '$new_filename' WHERE id = '$user_id'");
+                            // Refresh alert sukses
+                            $alert = "<script>alert('Profil & Foto Berhasil Diperbarui!'); window.location='profileadmin.php';</script>";
+                        } else {
+                            $alert = "<script>alert('Gagal mengupload gambar ke folder tujuan.');</script>";
+                        }
+                    } else {
+                        $alert = "<script>alert('Ukuran file terlalu besar (Max 2MB).');</script>";
+                    }
+                } else {
+                    $alert = "<script>alert('Format file harus JPG, JPEG, atau PNG!');</script>";
+                }
+            }
+        } else {
+            $alert = "<script>alert('Terjadi kesalahan database: " . mysqli_error($conn) . "');</script>";
+        }
     }
 }
 
@@ -76,12 +95,12 @@ if (isset($_POST['change_password'])) {
     }
 }
 
-// Ambil Data Terbaru
+// Ambil Data Terbaru untuk ditampilkan di Form
 $query_user = mysqli_query($conn, "SELECT * FROM users WHERE id = '$user_id'");
 $data = mysqli_fetch_assoc($query_user);
 $admin_name = $_SESSION['full_name'];
 
-// URL Foto Profil
+// URL Foto Profil Logic
 $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . $data['profile_image'] : "../assets/images/default_profile.png";
 ?>
 
@@ -137,7 +156,6 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 
 <div class="flex min-h-screen">
     
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Logo" class="object-contain flex-shrink-0">
@@ -172,10 +190,8 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
         
-        <!-- NAVBAR -->
         <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -199,10 +215,8 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
             </div>
         </header>
 
-        <!-- CONTENT GRID -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Left: Profile Card -->
             <div class="lg:col-span-1" data-aos="fade-up">
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-32 bg-[var(--deep-forest)] z-0"></div>
@@ -232,10 +246,8 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                 </div>
             </div>
 
-            <!-- Right: Forms -->
             <div class="lg:col-span-2 space-y-8">
                 
-                <!-- Edit Profile Form -->
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow" data-aos="fade-up" data-aos-delay="100">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-[var(--light-sage)] flex items-center justify-center text-[var(--deep-forest)]">
@@ -245,7 +257,6 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     </div>
 
                     <form action="" method="POST" enctype="multipart/form-data" class="space-y-5">
-                        <!-- Upload Photo -->
                         <div>
                             <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Foto Profil</label>
                             <input type="file" name="profile_image" accept="image/*" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--deep-forest)] file:text-white hover:file:bg-[var(--chocolate-brown)]">
@@ -270,7 +281,6 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     </form>
                 </div>
 
-                <!-- Change Password Form (Sama seperti sebelumnya) -->
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow" data-aos="fade-up" data-aos-delay="200">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
