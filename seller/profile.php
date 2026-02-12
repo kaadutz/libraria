@@ -12,39 +12,65 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'seller') {
 
 $seller_id = $_SESSION['user_id'];
 
+// Variabel Toast (Untuk pesan error/sukses)
+$toast_message = "";
+$toast_type = "";
+
 // --- 1. HANDLE UPDATE PROFIL ---
 if (isset($_POST['update_profile'])) {
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
-    $email     = mysqli_real_escape_string($conn, $_POST['email']);
-    $phone     = mysqli_real_escape_string($conn, $_POST['phone']); // Pastikan kolom ini ada di DB
-    $address   = mysqli_real_escape_string($conn, $_POST['address']); // Pastikan kolom ini ada di DB
+    $full_name    = mysqli_real_escape_string($conn, $_POST['full_name']);
+    $email        = mysqli_real_escape_string($conn, $_POST['email']);
+    $address      = mysqli_real_escape_string($conn, $_POST['address']); 
+    $bank_info    = mysqli_real_escape_string($conn, $_POST['bank_info']);
+    $bank_account = mysqli_real_escape_string($conn, $_POST['bank_account']);
     
-    // Handle Upload Foto
-    $img_sql = "";
-    if (!empty($_FILES['profile_image']['name'])) {
-        $target_dir = "../assets/uploads/profiles/";
-        if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-        
-        $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
-        $new_name = "profile_" . $seller_id . "_" . time() . "." . $ext;
-        
-        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
-            $img_sql = ", profile_image='$new_name'";
-            
-            // Update Session Image
-            $_SESSION['profile_image'] = $new_name;
-        }
-    }
+    // VALIDASI DUPLIKAT EMAIL (Kecuali email sendiri)
+    $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email' AND id != '$seller_id'");
+    
+    // VALIDASI DUPLIKAT NAMA TOKO (Kecuali nama sendiri)
+    $check_name = mysqli_query($conn, "SELECT id FROM users WHERE full_name = '$full_name' AND id != '$seller_id'");
 
-    // Update DB
-    $query = "UPDATE users SET full_name='$full_name', email='$email', phone='$phone', address='$address' $img_sql WHERE id='$seller_id'";
-    
-    if (mysqli_query($conn, $query)) {
-        $_SESSION['full_name'] = $full_name; // Update session name
-        $alert = "<script>alert('Profil berhasil diperbarui!'); window.location='profile.php';</script>";
+    if (mysqli_num_rows($check_email) > 0) {
+        $toast_message = "Email sudah digunakan oleh akun lain!";
+        $toast_type = "error";
+    } elseif (mysqli_num_rows($check_name) > 0) {
+        $toast_message = "Nama Toko sudah digunakan! Silakan pilih nama lain.";
+        $toast_type = "error";
     } else {
-        $alert = "<script>alert('Gagal memperbarui profil: " . mysqli_error($conn) . "');</script>";
+        // Handle Upload Foto
+        $img_sql = "";
+        if (!empty($_FILES['profile_image']['name'])) {
+            $target_dir = "../assets/uploads/profiles/";
+            if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
+            
+            $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+            $new_name = "profile_" . $seller_id . "_" . time() . "." . $ext;
+            
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
+                $img_sql = ", profile_image='$new_name'";
+                $_SESSION['profile_image'] = $new_name; // Update Session Img
+            }
+        }
+
+        // Update DB (NIK TIDAK DI-UPDATE KARENA READ ONLY)
+        $query = "UPDATE users SET 
+                  full_name='$full_name', 
+                  email='$email', 
+                  address='$address', 
+                  bank_info='$bank_info', 
+                  bank_account='$bank_account' 
+                  $img_sql 
+                  WHERE id='$seller_id'";
+        
+        if (mysqli_query($conn, $query)) {
+            $_SESSION['full_name'] = $full_name; // Update Session Name
+            header("Location: profile.php?status=success_update");
+            exit;
+        } else {
+            $toast_message = "Gagal update: " . mysqli_error($conn);
+            $toast_type = "error";
+        }
     }
 }
 
@@ -54,17 +80,20 @@ if (isset($_POST['change_password'])) {
     $new_pass = $_POST['new_password'];
     $confirm_pass = $_POST['confirm_password'];
 
-    // Ambil password lama dari DB
     $q = mysqli_query($conn, "SELECT password FROM users WHERE id='$seller_id'");
     $curr_user = mysqli_fetch_assoc($q);
 
-    if ($old_pass !== $curr_user['password']) {
-        $alert = "<script>alert('Password lama salah!');</script>";
+    if (!password_verify($old_pass, $curr_user['password'])) {
+        $toast_message = "Password lama salah!";
+        $toast_type = "error";
     } elseif ($new_pass !== $confirm_pass) {
-        $alert = "<script>alert('Konfirmasi password baru tidak cocok!');</script>";
+        $toast_message = "Konfirmasi password baru tidak cocok!";
+        $toast_type = "error";
     } else {
-        mysqli_query($conn, "UPDATE users SET password='$new_pass' WHERE id='$seller_id'");
-        $alert = "<script>alert('Password berhasil diubah!'); window.location='profile.php';</script>";
+        $hashed_new_pass = password_hash($new_pass, PASSWORD_DEFAULT);
+        mysqli_query($conn, "UPDATE users SET password='$hashed_new_pass' WHERE id='$seller_id'");
+        header("Location: profile.php?status=success_password");
+        exit;
     }
 }
 
@@ -123,10 +152,17 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .sidebar-collapsed .sidebar-text-wrapper { opacity: 0 !important; width: 0 !important; margin-left: 0 !important; pointer-events: none; }
     .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
+
+    /* Toast Animation */
+    @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .toast-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .toast-exit { animation: fadeOut 0.4s ease forwards; }
 </style>
 </head>
 <body class="overflow-x-hidden">
-    <?= isset($alert) ? $alert : '' ?>
+
+<div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3"></div>
 
 <div class="flex min-h-screen">
     
@@ -165,9 +201,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="font-medium menu-text whitespace-nowrap">Chat</span>
                 <?php if($total_unread_chat > 0): ?><span class="ml-auto bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full menu-text"><?= $total_unread_chat ?></span><?php endif; ?>
             </a>
-              <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
+            </a>
+            <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+                <span class="material-symbols-outlined flex-shrink-0 text-2xl">storefront</span>
+                <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
             </a>
         </nav>
         <div class="p-3 border-t border-[var(--border-color)]">
@@ -214,6 +254,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 </button>
                 <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                     <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors bg-[var(--light-sage)]/20 font-bold"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
+                    <div class="border-t border-gray-100 my-1"></div>
                     <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
             </div>
@@ -245,8 +286,9 @@ $total_notif = $total_new_orders + $total_unread_chat;
                             <p class="text-sm font-medium text-[var(--text-dark)] truncate"><?= $user['email'] ?></p>
                         </div>
                         <div>
-                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">NIK</p>
-                            <p class="text-sm font-medium text-[var(--text-dark)] font-mono bg-stone-50 px-2 py-1 rounded w-fit"><?= $user['nik'] ?></p>
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Rekening Utama</p>
+                            <p class="text-xs font-medium text-[var(--text-dark)] truncate"><?= $user['bank_info'] ? $user['bank_info'] : '-' ?></p>
+                            <p class="text-xs font-mono text-stone-500"><?= $user['bank_account'] ? $user['bank_account'] : '' ?></p>
                         </div>
                     </div>
                 </div>
@@ -275,15 +317,20 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                 <input type="email" name="email" value="<?= $user['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 text-sm">
                             </div>
                         </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">NIK (Read Only)</label>
+                            <input type="text" value="<?= $user['nik'] ?>" readonly class="w-full px-4 py-3 rounded-xl bg-gray-100 text-gray-500 border-transparent cursor-not-allowed text-sm focus:ring-0">
+                        </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nomor Telepon</label>
-                                <input type="text" name="phone" value="<?= isset($user['phone']) ? $user['phone'] : '' ?>" placeholder="08..." class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 text-sm">
+                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nama Bank & Pemilik</label>
+                                <input type="text" name="bank_info" value="<?= isset($user['bank_info']) ? htmlspecialchars($user['bank_info']) : '' ?>" placeholder="Cth: BCA a.n Siti Aminah" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">NIK (Read Only)</label>
-                                <input type="text" value="<?= $user['nik'] ?>" readonly class="w-full px-4 py-3 rounded-xl bg-stone-100 text-stone-500 border-transparent cursor-not-allowed text-sm">
+                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nomor Rekening</label>
+                                <input type="number" name="bank_account" value="<?= isset($user['bank_account']) ? htmlspecialchars($user['bank_account']) : '' ?>" placeholder="Cth: 1234567890" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 text-sm">
                             </div>
                         </div>
 
@@ -370,6 +417,32 @@ $total_notif = $total_new_orders + $total_unread_chat;
             dropdowns.forEach(dd => dd.classList.add('hidden'));
         }
     }
+
+    // TOAST FUNCTION
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-[var(--deep-forest)]' : 'bg-red-600';
+        const icon = type === 'success' ? 'check_circle' : 'error';
+
+        toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95 transform transition-all duration-300 hover:scale-105`;
+        toast.innerHTML = `<span class="material-symbols-outlined text-2xl">${icon}</span><p class="text-sm font-bold">${message}</p>`;
+        
+        toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); };
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); } }, 4000);
+    }
+
+    // PHP Status Handling (Success Messages)
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    if (status === 'success_update') showToast('Profil berhasil diperbarui!', 'success');
+    if (status === 'success_password') showToast('Password berhasil diubah!', 'success');
+
+    // PHP Error Injection (Duplicate/Error Messages)
+    <?php if(!empty($toast_message)): ?>
+        showToast("<?= $toast_message ?>", "<?= $toast_type ?>");
+    <?php endif; ?>
 
     // Image Preview
     function previewFile() {
