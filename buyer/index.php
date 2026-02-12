@@ -43,15 +43,22 @@ while($msg = mysqli_fetch_assoc($q_msg_notif)){
 
 // B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
 $q_order_notif = mysqli_query($conn, "
-    SELECT invoice_number, status, order_date 
-    FROM orders 
-    WHERE buyer_id = '$buyer_id' 
-    AND status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
-    ORDER BY order_date DESC LIMIT 5
+    SELECT o.invoice_number, o.status, o.order_date,
+           (SELECT b.title FROM order_items oi JOIN books b ON oi.book_id = b.id WHERE oi.order_id = o.id LIMIT 1) as first_book_title,
+           (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as total_items
+    FROM orders o
+    WHERE o.buyer_id = '$buyer_id'
+    AND o.status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
+    ORDER BY o.order_date DESC LIMIT 5
 ");
 
 while($ord = mysqli_fetch_assoc($q_order_notif)){
-    $title = $ord['invoice_number'];
+    $item_info = $ord['first_book_title'];
+    if($ord['total_items'] > 1) {
+        $item_info .= " & " . ($ord['total_items'] - 1) . " lainnya";
+    }
+
+    $title = "Update: " . $item_info;
     $text = ""; $icon = ""; $color = "";
     
     if($ord['status'] == 'approved') {
@@ -134,6 +141,35 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     <title>Beranda - Libraria</title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../assets/js/theme-manager.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3a5020",
+              "primary-light": "#537330",
+              "chocolate": "#633d0c",
+              "chocolate-light": "#8a5a1b",
+              "tan": "#b08144",
+              "sand": "#e6e2dd",
+              "sage": "#d1d6a7",
+              "sage-dark": "#aeb586",
+              "cream": "#fefbe9",
+              "background-light": "#fefbe9",
+              "background-dark": "#1a1c18",
+            },
+            fontFamily: {
+                display: ["DM Serif Display", "serif"],
+                sans: ["Inter", "sans-serif"],
+                logo: ["Cinzel", "serif"],
+            }
+          },
+        },
+      };
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -148,6 +184,12 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
             --text-dark: #2D2418;
             --text-muted: #6B6155;
             --border-color: #E6E1D3;
+        }
+        html.dark {
+            --cream-bg: #1a1c18;
+            --text-dark: #e6e2dd;
+            --text-muted: #a8a29e;
+            --border-color: #44403c;
         }
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
@@ -166,10 +208,8 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
-    <div id="toast-container" class="fixed top-28 right-5 z-[60] flex flex-col gap-3"></div>
-
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
+        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
@@ -199,6 +239,10 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                         <span class="material-symbols-outlined">help</span>
                     </a>
 
+                    <button id="dark-mode-icon" onclick="toggleDarkMode()" class="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300 cursor-pointer">
+                        dark_mode
+                    </button>
+
                     <div class="relative">
                         <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300 relative">
                             <span class="material-symbols-outlined">notifications</span>
@@ -207,9 +251,9 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                                 <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                             <?php endif; ?>
                         </button>
-                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
+                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-80 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                             <div class="px-4 py-3 border-b border-[var(--border-color)] flex justify-between items-center">
-                                <h4 class="font-bold text-[var(--deep-forest)] text-sm">Notifikasi</h4>
+                                <h4 class="font-bold text-[var(--deep-forest)] dark:text-stone-200 text-sm">Notifikasi</h4>
                                 <?php if($total_notif > 0): ?><span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold"><?= $total_notif ?> Baru</span><?php endif; ?>
                             </div>
                             <div class="max-h-64 overflow-y-auto custom-scroll">
@@ -232,7 +276,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                         </div>
                     </div>
 
-                    <a href="cart.php" class="relative w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border-color)] bg-white text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <a href="cart.php" class="relative w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border-color)] bg-white dark:bg-stone-800 text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
                         <span class="material-symbols-outlined">shopping_bag</span>
                         <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce <?= $cart_count > 0 ? '' : 'hidden' ?>"><?= $cart_count ?></span>
                     </a>
@@ -246,19 +290,19 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                             </div>
                             <span class="material-symbols-outlined text-[var(--text-muted)] text-sm hidden md:block">expand_more</span>
                         </button>
-                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
+                        <div id="profileDropdown" class="absolute right-0 mt-3 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                             <div class="px-4 py-3 border-b border-[var(--border-color)] md:hidden">
-                                <p class="text-sm font-bold text-[var(--deep-forest)]"><?= $buyer_name ?></p>
+                                <p class="text-sm font-bold text-[var(--deep-forest)] dark:text-stone-200"><?= $buyer_name ?></p>
                             </div>
                             <div class="lg:hidden border-b border-[var(--border-color)] pb-2 mb-2">
-                                <a href="index.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm text-[var(--text-muted)] font-bold text-[var(--deep-forest)]"><span class="material-symbols-outlined text-lg">home</span> Beranda</a>
-                                <a href="all_books.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm text-[var(--text-muted)]"><span class="material-symbols-outlined text-lg">menu_book</span> Buku</a>
-                                <a href="my_orders.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm text-[var(--text-muted)]"><span class="material-symbols-outlined text-lg">receipt_long</span> Pesanan</a>
-                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm text-[var(--text-muted)]"><span class="material-symbols-outlined text-lg">chat</span> Chat</a>
+                                <a href="index.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 text-sm text-[var(--text-muted)] font-bold text-[var(--deep-forest)]"><span class="material-symbols-outlined text-lg">home</span> Beranda</a>
+                                <a href="all_books.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 text-sm text-[var(--text-muted)]"><span class="material-symbols-outlined text-lg">menu_book</span> Buku</a>
+                                <a href="my_orders.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 text-sm text-[var(--text-muted)]"><span class="material-symbols-outlined text-lg">receipt_long</span> Pesanan</a>
+                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 text-sm text-[var(--text-muted)]"><span class="material-symbols-outlined text-lg">chat</span> Chat</a>
                             </div>
-                            <a href="profile.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] text-sm font-bold text-[var(--text-dark)]"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
+                            <a href="profile.php" class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 text-sm font-bold text-[var(--text-dark)] dark:text-stone-200"><span class="material-symbols-outlined text-lg">person</span> Akun Saya</a>
                             <div class="border-t border-[var(--border-color)] my-1"></div>
-                            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-sm font-bold text-red-600 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
+                            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-2 hover:bg-red-50 dark:hover:bg-stone-700 text-sm font-bold text-red-600 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</a>
                         </div>
                     </div>
                 </div>
@@ -316,7 +360,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
             </div>
 
             <div class="flex overflow-x-auto gap-4 pb-4 no-scrollbar snap-x">
-                <a href="index.php" class="shrink-0 snap-start min-w-[140px] md:min-w-[160px] p-5 rounded-2xl border border-[var(--border-color)] flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:border-[var(--deep-forest)] hover:shadow-lg <?= !isset($_GET['cat']) ? 'bg-[var(--deep-forest)] text-white shadow-md' : 'bg-white text-[var(--text-dark)]' ?>">
+                <a href="index.php" class="shrink-0 snap-start min-w-[140px] md:min-w-[160px] p-5 rounded-2xl border border-[var(--border-color)] flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:border-[var(--deep-forest)] hover:shadow-lg <?= !isset($_GET['cat']) ? 'bg-[var(--deep-forest)] text-white shadow-md' : 'bg-white dark:bg-stone-800 text-[var(--text-dark)] dark:text-stone-200' ?>">
                     <span class="material-symbols-outlined text-3xl <?= !isset($_GET['cat']) ? 'text-[var(--light-sage)]' : 'text-[var(--warm-tan)]' ?>">grid_view</span>
                     <span class="font-bold text-sm">Semua</span>
                 </a>
@@ -328,7 +372,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                     $icon = $icons[$i % count($icons)];
                     $i++;
                 ?>
-                <a href="?cat=<?= $cat['id'] ?>" class="shrink-0 snap-start min-w-[140px] md:min-w-[160px] p-5 rounded-2xl border border-[var(--border-color)] flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:border-[var(--deep-forest)] hover:shadow-lg <?= $isActive ? 'bg-[var(--deep-forest)] text-white shadow-md' : 'bg-white text-[var(--text-dark)]' ?>">
+                <a href="?cat=<?= $cat['id'] ?>" class="shrink-0 snap-start min-w-[140px] md:min-w-[160px] p-5 rounded-2xl border border-[var(--border-color)] flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:border-[var(--deep-forest)] hover:shadow-lg <?= $isActive ? 'bg-[var(--deep-forest)] text-white shadow-md' : 'bg-white dark:bg-stone-800 text-[var(--text-dark)] dark:text-stone-200' ?>">
                     <span class="material-symbols-outlined text-3xl <?= $isActive ? 'text-[var(--light-sage)]' : 'text-[var(--warm-tan)]' ?>"><?= $icon ?></span>
                     <span class="font-bold text-sm line-clamp-1"><?= $cat['name'] ?></span>
                 </a>
@@ -339,7 +383,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
         <div class="md:hidden mb-8" data-aos="fade-up">
             <form action="" method="GET" class="w-full relative">
-                <input type="text" name="s" placeholder="Cari buku..." class="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-[var(--border-color)] focus:border-[var(--warm-tan)] focus:ring-0 shadow-sm text-sm">
+                <input type="text" name="s" placeholder="Cari buku..." class="w-full pl-10 pr-4 py-3 rounded-2xl bg-white dark:bg-stone-800 border border-[var(--border-color)] focus:border-[var(--warm-tan)] focus:ring-0 shadow-sm text-sm dark:text-stone-200">
                 <span class="material-symbols-outlined absolute left-3 top-3 text-[var(--text-muted)]">search</span>
             </form>
         </div>
@@ -362,16 +406,16 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                         $img_src = !empty($book['image']) ? "../assets/uploads/books/".$book['image'] : "../assets/images/book_placeholder.png";
                         $book_author = !empty($book['author']) ? $book['author'] : 'Penulis tidak disebutkan';
                     ?>
-                    <div class="bg-white rounded-[2rem] border border-[var(--border-color)] card-shadow overflow-hidden group relative flex flex-col h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div class="aspect-[2/3] bg-[var(--cream-bg)] relative overflow-hidden">
-                            <span class="absolute top-3 left-3 z-10 px-2 py-1 bg-white/90 backdrop-blur text-[var(--deep-forest)] text-[10px] font-bold uppercase rounded-lg shadow-sm border border-[var(--light-sage)]"><?= $book['category_name'] ?></span>
+                    <div class="bg-white dark:bg-stone-900 rounded-[2rem] border border-[var(--border-color)] card-shadow overflow-hidden group relative flex flex-col h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                        <div class="aspect-[2/3] bg-[var(--cream-bg)] dark:bg-stone-800 relative overflow-hidden">
+                            <span class="absolute top-3 left-3 z-10 px-2 py-1 bg-white/90 dark:bg-stone-800/90 backdrop-blur text-[var(--deep-forest)] dark:text-stone-200 text-[10px] font-bold uppercase rounded-lg shadow-sm border border-[var(--light-sage)]"><?= $book['category_name'] ?></span>
                             <img src="<?= $img_src ?>" alt="<?= $book['title'] ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                             <div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex flex-col justify-end h-full">
                                 <a href="detail_book.php?id=<?= $book['id'] ?>" class="w-full py-2.5 bg-white text-[var(--deep-forest)] font-bold text-xs rounded-xl text-center hover:bg-[var(--warm-tan)] hover:text-white transition-colors shadow-lg">Lihat Detail</a>
                             </div>
                         </div>
                         <div class="p-4 flex-1 flex flex-col">
-                            <h3 class="text-sm font-bold text-[var(--text-dark)] leading-snug mb-1 line-clamp-2 min-h-[2.5rem]" title="<?= $book['title'] ?>"><?= $book['title'] ?></h3>
+                            <h3 class="text-sm font-bold text-[var(--text-dark)] dark:text-stone-200 leading-snug mb-1 line-clamp-2 min-h-[2.5rem]" title="<?= $book['title'] ?>"><?= $book['title'] ?></h3>
                             <p class="text-[11px] text-[var(--text-muted)] mb-2 truncate"><?= $book_author ?></p>
                             <div class="flex items-center gap-1.5 mb-3">
                                 <span class="material-symbols-outlined text-[14px] text-[var(--text-muted)]">storefront</span>
@@ -396,9 +440,9 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
         </div>
     </main>
 
-    <footer class="bg-white border-t border-[var(--border-color)] py-10 mt-auto">
+    <footer class="bg-white dark:bg-stone-900 border-t border-[var(--border-color)] py-10 mt-auto">
         <div class="max-w-7xl mx-auto px-6 text-center">
-            <h2 class="text-2xl font-bold text-[var(--deep-forest)] font-logo mb-2 tracking-widest">LIBRARIA</h2>
+            <h2 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-stone-200 font-logo mb-2 tracking-widest">LIBRARIA</h2>
             <p class="text-xs text-[var(--text-muted)] mb-6">Platform jual beli buku terpercaya.</p>
             <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-widest uppercase">&copy; 2025 Libraria Bookstore.</p>
         </div>
@@ -434,15 +478,24 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
             .catch(error => { console.error('Error:', error); showToast('Gagal menghubungi server.', 'error'); });
         }
         function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-[var(--deep-forest)]' : 'bg-red-600';
-            const icon = type === 'success' ? 'check_circle' : 'error';
-            toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95`;
-            toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-            toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); };
-            container.appendChild(toast);
-            setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); } }, 3000);
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                background: document.documentElement.classList.contains('dark') ? '#1a1c18' : '#fff',
+                color: document.documentElement.classList.contains('dark') ? '#e6e2dd' : '#545454',
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
         }
     </script>
 </body>

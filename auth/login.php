@@ -75,7 +75,7 @@ if (isset($_POST['login'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="id" class="light">
+<html lang="id">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -88,6 +88,7 @@ if (isset($_POST['login'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script src="../assets/js/theme-manager.js"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -134,11 +135,11 @@ if (isset($_POST['login'])) {
         }
     </style>
 </head>
-<body class="bg-background-light h-screen flex items-center justify-center p-4 lg:p-0 overflow-hidden relative">
+<body class="bg-background-light dark:bg-background-dark h-screen flex items-center justify-center p-4 lg:p-0 overflow-hidden relative transition-colors duration-500">
 
     <div class="absolute inset-0 paper-texture pointer-events-none z-0"></div>
 
-    <div class="w-full h-full lg:w-[90%] lg:h-[90%] bg-white rounded-xlarge shadow-2xl overflow-hidden flex flex-col lg:flex-row relative border border-stone-200/50 z-10">
+    <div class="w-full h-full lg:w-[90%] lg:h-[90%] bg-white dark:bg-stone-900 rounded-xlarge shadow-2xl overflow-hidden flex flex-col lg:flex-row relative border border-stone-200/50 dark:border-stone-800 z-10">
         
         <div class="hidden lg:flex w-5/12 bg-[#3a5020] relative flex-col justify-between p-12 text-white overflow-hidden">
             <div class="absolute inset-0 bg-library bg-cover bg-center mix-blend-overlay opacity-40 z-0"></div>
@@ -166,36 +167,44 @@ if (isset($_POST['login'])) {
             </div>
         </div>
 
-        <div class="w-full lg:w-7/12 bg-cream flex flex-col justify-center h-full relative p-8 md:p-16 lg:p-24">
+        <div class="w-full lg:w-7/12 bg-cream dark:bg-stone-900/50 flex flex-col justify-center h-full relative p-8 md:p-16 lg:p-24 transition-colors">
+
+            <!-- Dark Mode Toggle -->
+            <div class="absolute top-8 right-8 z-20">
+                <button id="dark-mode-icon" onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-primary hover:shadow-md transition-all cursor-pointer">
+                    dark_mode
+                </button>
+            </div>
+
             <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-tan/10 to-transparent rounded-bl-full pointer-events-none"></div>
 
             <div class="max-w-md mx-auto w-full z-10">
                 <div class="mb-10 text-center lg:text-left">
-                    <h2 class="font-display text-4xl text-primary mb-3">Masuk</h2>
-                    <p class="text-stone-500">Masukkan email dan kata sandi untuk mengakses akun Anda.</p>
+                    <h2 class="font-display text-4xl text-primary dark:text-sage mb-3">Masuk</h2>
+                    <p class="text-stone-500 dark:text-stone-400">Masukkan email dan kata sandi untuk mengakses akun Anda.</p>
                 </div>
 
                 <form action="" method="POST" class="space-y-6">
                     
                     <div class="group">
-                        <label class="text-xs font-bold text-stone-500 uppercase tracking-wider ml-1 mb-1 block group-focus-within:text-primary transition-colors">Alamat Email</label>
+                        <label class="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider ml-1 mb-1 block group-focus-within:text-primary dark:group-focus-within:text-sage transition-colors">Alamat Email</label>
                         <div class="relative">
-                            <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">email</span>
+                            <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary dark:group-focus-within:text-sage transition-colors">email</span>
                             <input type="email" name="email" required 
-                                   class="w-full pl-12 pr-4 py-3.5 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 shadow-sm"
+                                   class="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-primary/20 dark:focus:ring-sage/20 focus:border-primary dark:focus:border-sage transition-all outline-none text-stone-800 dark:text-stone-200 placeholder-stone-400 shadow-sm"
                                    placeholder="nama@email.com">
                         </div>
                     </div>
 
                     <div class="group">
                         <div class="flex justify-between items-center ml-1 mb-1">
-                            <label class="text-xs font-bold text-stone-500 uppercase tracking-wider group-focus-within:text-primary transition-colors">Kata Sandi</label>
+                            <label class="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider group-focus-within:text-primary dark:group-focus-within:text-sage transition-colors">Kata Sandi</label>
                             <a href="forgot_password.php" class="text-xs font-semibold text-tan hover:text-chocolate transition-colors">Lupa Kata Sandi?</a>
                         </div>
                         <div class="relative">
-                            <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">lock</span>
+                            <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary dark:group-focus-within:text-sage transition-colors">lock</span>
                             <input type="password" name="password" id="password" required 
-                                   class="w-full pl-12 pr-12 py-3.5 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 shadow-sm"
+                                   class="w-full pl-12 pr-12 py-3.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-primary/20 dark:focus:ring-sage/20 focus:border-primary dark:focus:border-sage transition-all outline-none text-stone-800 dark:text-stone-200 placeholder-stone-400 shadow-sm"
                                    placeholder="••••••••">
                             <div class="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-stone-400 hover:text-primary transition-colors" onclick="togglePassword()">
                                 <span id="eyeIcon" class="material-icons-outlined">visibility</span>

@@ -31,16 +31,16 @@ $toast_type = "";
 // TAMBAH PRODUK
 if (isset($_POST['add_product'])) {
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
-    $author      = mysqli_real_escape_string($conn, $_POST['author']); 
+    $author      = mysqli_real_escape_string($conn, $_POST['author']);
     $category_id = mysqli_real_escape_string($conn, $_POST['category_id']);
     $cost_price  = str_replace('.', '', $_POST['cost_price']);
     $sell_price  = str_replace('.', '', $_POST['sell_price']);
     $stock       = mysqli_real_escape_string($conn, $_POST['stock']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
-    
+
     // VALIDASI DUPLIKAT
     $check_duplicate = mysqli_query($conn, "SELECT id FROM books WHERE title = '$title' AND seller_id = '$seller_id'");
-    
+
     if (mysqli_num_rows($check_duplicate) > 0) {
         $toast_message = "Gagal: Judul buku sudah ada di toko Anda!";
         $toast_type = "error";
@@ -57,9 +57,9 @@ if (isset($_POST['add_product'])) {
             }
         }
 
-        $query = "INSERT INTO books (seller_id, category_id, title, author, description, image, stock, cost_price, sell_price) 
+        $query = "INSERT INTO books (seller_id, category_id, title, author, description, image, stock, cost_price, sell_price)
                   VALUES ('$seller_id', '$category_id', '$title', '$author', '$description', '$image', '$stock', '$cost_price', '$sell_price')";
-        
+
         if (mysqli_query($conn, $query)) {
             header("Location: products.php?status=success_add");
             exit;
@@ -74,7 +74,7 @@ if (isset($_POST['add_product'])) {
 if (isset($_POST['edit_product'])) {
     $id          = $_POST['id'];
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
-    $author      = mysqli_real_escape_string($conn, $_POST['author']); 
+    $author      = mysqli_real_escape_string($conn, $_POST['author']);
     $category_id = mysqli_real_escape_string($conn, $_POST['category_id']);
     $cost_price  = str_replace('.', '', $_POST['cost_price']);
     $sell_price  = str_replace('.', '', $_POST['sell_price']);
@@ -93,7 +93,7 @@ if (isset($_POST['edit_product'])) {
             $target_dir = "../assets/uploads/books/";
             $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
             $new_name = "book_" . time() . "_" . uniqid() . "." . $ext;
-            
+
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                 move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $new_name);
                 $img_sql = ", image='$new_name'";
@@ -104,10 +104,10 @@ if (isset($_POST['edit_product'])) {
             }
         }
 
-        $query = "UPDATE books SET title='$title', author='$author', category_id='$category_id', cost_price='$cost_price', 
-                  sell_price='$sell_price', stock='$stock', description='$description' $img_sql 
+        $query = "UPDATE books SET title='$title', author='$author', category_id='$category_id', cost_price='$cost_price',
+                  sell_price='$sell_price', stock='$stock', description='$description' $img_sql
                   WHERE id='$id' AND seller_id='$seller_id'";
-                  
+
         if (mysqli_query($conn, $query)) {
             header("Location: products.php?status=success_edit");
             exit;
@@ -118,7 +118,7 @@ if (isset($_POST['edit_product'])) {
 // HAPUS PRODUK (DENGAN CEK STOK)
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
-    
+
     // Cek Stok Dulu
     $check_stock = mysqli_query($conn, "SELECT stock, image FROM books WHERE id='$id' AND seller_id='$seller_id'");
     $data = mysqli_fetch_assoc($check_stock);
@@ -139,7 +139,7 @@ if (isset($_GET['delete'])) {
 }
 
 // --- 3. DATA PRODUK & PAGINATION ---
-$limit = 8; 
+$limit = 8;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page - 1) * $limit;
 
@@ -148,11 +148,11 @@ $total_data = mysqli_fetch_assoc($count_query)['total'];
 $total_pages = ceil($total_data / $limit);
 
 $books = mysqli_query($conn, "
-    SELECT b.*, c.name as category_name 
-    FROM books b 
-    JOIN categories c ON b.category_id = c.id 
-    WHERE b.seller_id = '$seller_id' 
-    ORDER BY b.stock ASC, b.created_at DESC 
+    SELECT b.*, c.name as category_name
+    FROM books b
+    JOIN categories c ON b.category_id = c.id
+    WHERE b.seller_id = '$seller_id'
+    ORDER BY b.stock ASC, b.created_at DESC
     LIMIT $start, $limit
 "); // Added Order by Stock ASC biar yg kosong muncul diatas
 $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
@@ -166,6 +166,35 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 <title>Produk Saya - Libraria Seller</title>
 
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../assets/js/theme-manager.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          primary: "#3a5020",
+          "primary-light": "#537330",
+          "chocolate": "#633d0c",
+          "chocolate-light": "#8a5a1b",
+          "tan": "#b08144",
+          "sand": "#e6e2dd",
+          "sage": "#d1d6a7",
+          "sage-dark": "#aeb586",
+          "cream": "#fefbe9",
+          "background-light": "#fefbe9",
+          "background-dark": "#1a1c18",
+        },
+        fontFamily: {
+            display: ["DM Serif Display", "serif"],
+            sans: ["Inter", "sans-serif"],
+            logo: ["Cinzel", "serif"],
+        }
+      },
+    },
+  };
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -182,17 +211,23 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
         --text-muted: #6B6155;
         --border-color: #E6E1D3;
     }
+    html.dark {
+        --cream-bg: #1a1c18;
+        --text-dark: #e6e2dd;
+        --text-muted: #a8a29e;
+        --border-color: #44403c;
+    }
     body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
     .font-logo { font-family: 'Cinzel', serif; }
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    
+
     .fix-mask {
         -webkit-mask-image: -webkit-radial-gradient(white, black);
         mask-image: radial-gradient(white, black);
     }
-    
+
     /* Toast Animation */
     @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -217,11 +252,9 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 </head>
 <body class="overflow-x-hidden">
 
-<div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3"></div>
-
 <div class="flex min-h-screen">
-    
-    <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
+
+    <aside id="sidebar" class="w-64 bg-white dark:bg-stone-900 border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
             <div class="sidebar-text-wrapper flex flex-col justify-center">
@@ -229,13 +262,13 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
-        
+
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
             <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
                 <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            
+
             <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori</span>
@@ -275,7 +308,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
             </a>
         </nav>
-        
+
         <div class="p-3 border-t border-[var(--border-color)]">
             <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
@@ -285,73 +318,77 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+
+        <header class="flex justify-between items-center mb-8 bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none dark:text-stone-300 dark:hover:bg-stone-800">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Manajemen Produk</h2></div>
+                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] dark:text-stone-200 hidden md:block">Manajemen Produk</h2></div>
             </div>
-            
+
             <div class="flex items-center gap-4 relative">
+                <button id="dark-mode-icon" onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white dark:bg-stone-800 border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all cursor-pointer">
+                    dark_mode
+                </button>
+
                 <button onclick="toggleModal('addProductModal')" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-[var(--chocolate-brown)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-900/20 text-sm">
                     <span class="material-symbols-outlined text-[18px]">add_circle</span> Tambah Produk
                 </button>
 
-                <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
+                <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white dark:bg-stone-800 border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
                         <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
                     <?php endif; ?>
                 </button>
-                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-                        <h4 class="font-bold text-[var(--deep-forest)]">Notifikasi</h4>
+                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-stone-700 flex justify-between items-center">
+                        <h4 class="font-bold text-[var(--deep-forest)] dark:text-stone-200">Notifikasi</h4>
                         <?php if($total_notif > 0): ?>
                             <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold"><?= $total_notif ?> Baru</span>
                         <?php endif; ?>
                     </div>
                     <div class="max-h-64 overflow-y-auto">
                         <?php if($total_new_orders > 0): ?>
-                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
-                            <div class="p-2 bg-orange-100 text-orange-600 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
+                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 transition-colors border-b border-gray-50 dark:border-stone-700">
+                            <div class="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
                             <div>
-                                <p class="text-sm font-bold text-gray-800">Pesanan Baru!</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu konfirmasi.</p>
+                                <p class="text-sm font-bold text-gray-800 dark:text-stone-200">Pesanan Baru!</p>
+                                <p class="text-xs text-gray-500 dark:text-stone-400">Ada <?= $total_new_orders ?> pesanan menunggu konfirmasi.</p>
                             </div>
                         </a>
                         <?php endif; ?>
-                        
+
                         <?php if($total_unread_chat > 0): ?>
-                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
-                            <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
+                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 transition-colors border-b border-gray-50 dark:border-stone-700">
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
                             <div>
-                                <p class="text-sm font-bold text-gray-800">Pesan Masuk</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_unread_chat ?> pesan belum dibaca.</p>
+                                <p class="text-sm font-bold text-gray-800 dark:text-stone-200">Pesan Masuk</p>
+                                <p class="text-xs text-gray-500 dark:text-stone-400">Ada <?= $total_unread_chat ?> pesan belum dibaca.</p>
                             </div>
                         </a>
                         <?php endif; ?>
 
                         <?php if($total_notif == 0): ?>
-                            <div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div>
+                            <div class="text-center py-6 text-gray-400 dark:text-stone-500 text-xs italic">Tidak ada notifikasi baru.</div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
-                    <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
+                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white dark:bg-stone-800 p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
+                    <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)] dark:border-stone-700"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $seller_name ?></p>
+                        <p class="text-xs font-bold leading-none title-font dark:text-stone-200"><?= $seller_name ?></p>
                         <p class="text-[10px] text-[var(--text-muted)] leading-none mt-1 font-bold uppercase">Seller</p>
                     </div>
                     <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)]">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
+                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-stone-300 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
+                    <div class="border-t border-gray-100 dark:border-stone-700 my-1"></div>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-stone-700 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
             </div>
         </header>
@@ -362,25 +399,25 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-aos="fade-up">
             <?php if(mysqli_num_rows($books) > 0): ?>
-                <?php while($book = mysqli_fetch_assoc($books)): 
+                <?php while($book = mysqli_fetch_assoc($books)):
                     $img_src = !empty($book['image']) ? "../assets/uploads/books/".$book['image'] : "../assets/images/book_placeholder.png";
-                    $author = !empty($book['author']) ? $book['author'] : 'Penulis Tidak Diketahui'; 
-                    
+                    $author = !empty($book['author']) ? $book['author'] : 'Penulis Tidak Diketahui';
+
                     // --- LOGIKA TAMPILAN STOK HABIS ---
                     $is_out_of_stock = ($book['stock'] <= 0);
-                    $card_style = $is_out_of_stock ? "border-red-200 opacity-90" : "border-[var(--border-color)]";
-                    $bg_badge = $is_out_of_stock ? "bg-red-500 text-white" : "bg-white/90 backdrop-blur text-[var(--deep-forest)]";
+                    $card_style = $is_out_of_stock ? "border-red-200 dark:border-red-900/50 opacity-90" : "border-[var(--border-color)]";
+                    $bg_badge = $is_out_of_stock ? "bg-red-500 text-white" : "bg-white/90 dark:bg-stone-800/90 backdrop-blur text-[var(--deep-forest)] dark:text-stone-200";
                 ?>
-                <div class="bg-white rounded-[2rem] border <?= $card_style ?> card-shadow group relative flex flex-col h-full hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden fix-mask">
-                    
-                    <div class="relative aspect-[3/4] bg-[var(--cream-bg)] overflow-hidden">
-                        
+                <div class="bg-white dark:bg-stone-900 rounded-[2rem] border <?= $card_style ?> card-shadow group relative flex flex-col h-full hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden fix-mask">
+
+                    <div class="relative aspect-[3/4] bg-[var(--cream-bg)] dark:bg-stone-800 relative overflow-hidden">
+
                         <span class="absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border border-transparent <?= $bg_badge ?>">
                             <?= $is_out_of_stock ? "STOK HABIS" : $book['category_name'] ?>
                         </span>
 
                         <img src="<?= $img_src ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 <?= $is_out_of_stock ? 'grayscale-[0.5]' : '' ?>">
-                        
+
                         <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
                             <p class="<?= $is_out_of_stock ? 'text-red-300' : 'text-white' ?> text-xs font-bold flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm">inventory_2</span> Stok: <?= $book['stock'] ?>
@@ -389,27 +426,27 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                     </div>
 
                     <div class="p-5 flex-1 flex flex-col">
-                        <h3 class="text-lg font-bold text-[var(--text-dark)] leading-tight mb-1 line-clamp-2 min-h-[3rem]" title="<?= $book['title'] ?>"><?= $book['title'] ?></h3>
-                        
+                        <h3 class="text-lg font-bold text-[var(--text-dark)] dark:text-stone-200 leading-tight mb-1 line-clamp-2 min-h-[3rem]" title="<?= $book['title'] ?>"><?= $book['title'] ?></h3>
+
                         <p class="text-xs text-[var(--text-muted)] mb-3 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[14px]">person</span> <?= $author ?>
                         </p>
-                        
+
                         <div class="flex justify-between items-center mb-4">
                             <div>
                                 <p class="text-[10px] text-[var(--text-muted)] font-bold uppercase">Harga Jual</p>
-                                <p class="text-lg font-bold text-[var(--chocolate-brown)]">Rp <?= number_format($book['sell_price'], 0, ',', '.') ?></p>
+                                <p class="text-lg font-bold text-[var(--chocolate-brown)] dark:text-tan">Rp <?= number_format($book['sell_price'], 0, ',', '.') ?></p>
                             </div>
                         </div>
 
                         <div class="mt-auto pt-4 border-t border-dashed border-[var(--border-color)] flex items-center gap-2">
-                            
+
                             <a href="product_detail.php?id=<?= $book['id'] ?>" class="flex-1 py-2 bg-[var(--light-sage)]/20 text-[var(--deep-forest)] rounded-xl font-bold text-xs flex items-center justify-center gap-1 hover:bg-[var(--deep-forest)] hover:text-white transition-all">
                                 <span class="material-symbols-outlined text-base">visibility</span>
                             </a>
 
-                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($book)) ?>)" 
-                                    class="w-full flex-1 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all <?= $is_out_of_stock ? 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white ring-2 ring-green-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' ?>" 
+                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($book)) ?>)"
+                                    class="w-full flex-1 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all <?= $is_out_of_stock ? 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white ring-2 ring-green-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' ?>"
                                     title="<?= $is_out_of_stock ? 'Isi Stok Sekarang' : 'Edit Produk' ?>">
                                 <span class="material-symbols-outlined text-base"><?= $is_out_of_stock ? 'add_box' : 'edit' ?></span>
                                 <?= $is_out_of_stock ? 'Isi Stok' : 'Edit' ?>
@@ -452,30 +489,30 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
 <div id="addProductModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
     <div class="modal-overlay absolute w-full h-full bg-black/50 backdrop-blur-sm" onclick="toggleModal('addProductModal')"></div>
-    <div class="modal-container bg-white w-11/12 md:max-w-2xl mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-8 transform scale-95 transition-all">
+    <div class="modal-container bg-white dark:bg-stone-900 w-11/12 md:max-w-2xl mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-8 transform scale-95 transition-all">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold text-[var(--deep-forest)] title-font">Tambah Produk</h3>
+            <h3 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-stone-200 title-font">Tambah Produk</h3>
             <button onclick="toggleModal('addProductModal')" class="text-stone-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
         </div>
         <form action="" method="POST" enctype="multipart/form-data" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Judul Buku</label><input type="text" name="title" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Penulis</label><input type="text" name="author" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Judul Buku</label><input type="text" name="title" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Penulis</label><input type="text" name="author" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
             </div>
             <div>
                 <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Kategori</label>
-                <select name="category_id" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0">
+                <select name="category_id" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0">
                     <?php mysqli_data_seek($categories, 0); while($cat = mysqli_fetch_assoc($categories)): ?>
                         <option value="<?= $cat['id'] ?>"><?= $cat['name'] ?></option>
                     <?php endwhile; ?>
                 </select>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Modal (Rp)</label><input type="text" name="cost_price" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Jual (Rp)</label><input type="text" name="sell_price" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Stok</label><input type="number" name="stock" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Modal (Rp)</label><input type="text" name="cost_price" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Jual (Rp)</label><input type="text" name="sell_price" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Stok</label><input type="number" name="stock" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
             </div>
-            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Deskripsi</label><textarea name="description" rows="3" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></textarea></div>
+            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Deskripsi</label><textarea name="description" rows="3" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></textarea></div>
             <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Upload Cover</label><input type="file" name="image" accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--deep-forest)] file:text-white hover:file:bg-[var(--chocolate-brown)]"></div>
             <button type="submit" name="add_product" class="w-full py-3.5 mt-2 bg-[var(--deep-forest)] text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg">Simpan Produk</button>
         </form>
@@ -484,32 +521,32 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
 <div id="editProductModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
     <div class="modal-overlay absolute w-full h-full bg-black/50 backdrop-blur-sm" onclick="toggleModal('editProductModal')"></div>
-    <div class="modal-container bg-white w-11/12 md:max-w-2xl mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-8 transform scale-95 transition-all">
+    <div class="modal-container bg-white dark:bg-stone-900 w-11/12 md:max-w-2xl mx-auto rounded-[2rem] shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-8 transform scale-95 transition-all">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold text-[var(--deep-forest)] title-font">Edit Produk</h3>
+            <h3 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-stone-200 title-font">Edit Produk</h3>
             <button onclick="toggleModal('editProductModal')" class="text-stone-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
         </div>
         <form action="" method="POST" enctype="multipart/form-data" class="space-y-4">
             <input type="hidden" name="id" id="edit_id">
             <input type="hidden" name="old_image" id="edit_old_image">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Judul Buku</label><input type="text" name="title" id="edit_title" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Penulis</label><input type="text" name="author" id="edit_author" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Judul Buku</label><input type="text" name="title" id="edit_title" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Penulis</label><input type="text" name="author" id="edit_author" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
             </div>
             <div>
                 <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Kategori</label>
-                <select name="category_id" id="edit_category" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0">
+                <select name="category_id" id="edit_category" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0">
                     <?php mysqli_data_seek($categories, 0); while($cat = mysqli_fetch_assoc($categories)): ?>
                         <option value="<?= $cat['id'] ?>"><?= $cat['name'] ?></option>
                     <?php endwhile; ?>
                 </select>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Modal</label><input type="text" name="cost_price" id="edit_cost" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Jual</label><input type="text" name="sell_price" id="edit_sell" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
-                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Stok</label><input type="number" name="stock" id="edit_stock" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Modal</label><input type="text" name="cost_price" id="edit_cost" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Harga Jual</label><input type="text" name="sell_price" id="edit_sell" required onkeyup="formatRupiah(this)" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
+                <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Stok</label><input type="number" name="stock" id="edit_stock" required class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></div>
             </div>
-            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Deskripsi</label><textarea name="description" id="edit_desc" rows="3" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0"></textarea></div>
+            <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Deskripsi</label><textarea name="description" id="edit_desc" rows="3" class="w-full px-4 py-2.5 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-800 dark:text-stone-200 border-transparent focus:bg-white dark:focus:bg-stone-700 focus:border-[var(--warm-tan)] focus:ring-0"></textarea></div>
             <div><label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Ganti Cover</label><input type="file" name="image" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--deep-forest)] file:text-white hover:file:bg-[var(--chocolate-brown)]"></div>
             <button type="submit" name="edit_product" class="w-full py-3.5 mt-2 bg-[var(--warm-tan)] text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg">Update Produk</button>
         </form>
@@ -522,7 +559,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {
@@ -555,17 +592,24 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
     // --- TOAST FUNCTION ---
     function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        const bgColor = type === 'success' ? 'bg-[var(--deep-forest)]' : 'bg-red-600';
-        const icon = type === 'success' ? 'check_circle' : 'error';
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: document.documentElement.classList.contains('dark') ? '#1a1c18' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#e6e2dd' : '#545454',
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
 
-        toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95 transform transition-all duration-300 hover:scale-105`;
-        toast.innerHTML = `<span class="material-symbols-outlined text-2xl">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-        
-        toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); };
-        container.appendChild(toast);
-        setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); } }, 4000);
+        Toast.fire({
+            icon: type,
+            title: message
+        });
     }
 
     // Check for PHP Status Messages (URL Params)
