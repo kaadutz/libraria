@@ -17,7 +17,7 @@ $buyer_name = $_SESSION['full_name'];
 if (isset($_POST['send_message'])) {
     $receiver_id = $_POST['receiver_id'];
     $message = mysqli_real_escape_string($conn, $_POST['message']);
-    
+
     if (!empty($message)) {
         $q_send = "INSERT INTO messages (sender_id, receiver_id, message, is_read, created_at) VALUES ('$buyer_id', '$receiver_id', '$message', 0, NOW())";
         mysqli_query($conn, $q_send);
@@ -44,15 +44,15 @@ $chat_list = mysqli_query($conn, $q_chats);
 $active_chat = null;
 if (isset($_GET['uid'])) {
     $chat_uid = mysqli_real_escape_string($conn, $_GET['uid']);
-    
+
     // Ambil Data Seller
     $q_seller = mysqli_query($conn, "SELECT * FROM users WHERE id = '$chat_uid'");
     if(mysqli_num_rows($q_seller) > 0) {
         $active_chat = mysqli_fetch_assoc($q_seller);
-        
+
         // Tandai pesan sudah dibaca
         mysqli_query($conn, "UPDATE messages SET is_read = 1 WHERE sender_id = '$chat_uid' AND receiver_id = '$buyer_id'");
-        
+
         // Ambil isi chat
         $q_msgs = mysqli_query($conn, "SELECT * FROM messages WHERE (sender_id = '$buyer_id' AND receiver_id = '$chat_uid') OR (sender_id = '$chat_uid' AND receiver_id = '$buyer_id') ORDER BY created_at ASC");
     }
@@ -106,17 +106,18 @@ $total_notif = $total_chat_unread;
         }
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
-        
+
         /* Chat Styling */
         .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 1rem; position: relative; }
         .chat-own { background-color: var(--deep-forest); color: white; border-bottom-right-radius: 0; margin-left: auto; }
         .chat-other { background-color: white; border: 1px solid var(--border-color); border-bottom-left-radius: 0; color: var(--text-dark); }
-        
+
         /* Scrollbar */
         .chat-area::-webkit-scrollbar { width: 6px; }
         .chat-area::-webkit-scrollbar-track { background: transparent; }
         .chat-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
@@ -133,6 +134,11 @@ $total_notif = $total_chat_unread;
                 <div class="hidden md:flex flex-1 max-w-xl mx-auto"></div>
 
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
@@ -191,17 +197,17 @@ $total_notif = $total_chat_unread;
     </nav>
 
     <main class="flex-1 pt-32 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full h-[calc(100vh-2rem)]">
-        
+
         <div class="bg-white rounded-[2.5rem] border border-[var(--border-color)] shadow-xl overflow-hidden h-full flex flex-col md:flex-row">
-            
+
             <div class="w-full md:w-80 border-r border-[var(--border-color)] bg-gray-50/50 flex flex-col h-full <?= $active_chat ? 'hidden md:flex' : 'flex' ?>">
                 <div class="p-6 border-b border-[var(--border-color)] bg-white">
                     <h2 class="text-xl font-bold text-[var(--deep-forest)]">Pesan</h2>
                 </div>
-                
+
                 <div class="flex-1 overflow-y-auto p-3 space-y-2">
                     <?php if(mysqli_num_rows($chat_list) > 0): ?>
-                        <?php while($chat = mysqli_fetch_assoc($chat_list)): 
+                        <?php while($chat = mysqli_fetch_assoc($chat_list)):
                             $c_img = !empty($chat['profile_image']) ? "../assets/uploads/profiles/".$chat['profile_image'] : "../assets/images/default_profile.png";
                             $active = ($active_chat && $active_chat['id'] == $chat['id']) ? 'bg-[var(--light-sage)]/30 border-[var(--light-sage)]' : 'bg-white border-transparent hover:bg-gray-50';
                         ?>
@@ -231,8 +237,8 @@ $total_notif = $total_chat_unread;
             </div>
 
             <div class="flex-1 flex flex-col bg-[url('../assets/images/chat-bg.png')] bg-repeat h-full <?= $active_chat ? 'flex' : 'hidden md:flex' ?>">
-                
-                <?php if($active_chat): 
+
+                <?php if($active_chat):
                     $a_img = !empty($active_chat['profile_image']) ? "../assets/uploads/profiles/".$active_chat['profile_image'] : "../assets/images/default_profile.png";
                 ?>
                     <div class="p-4 border-b border-[var(--border-color)] bg-white flex items-center gap-4 shadow-sm z-10">
@@ -247,10 +253,10 @@ $total_notif = $total_chat_unread;
                     </div>
 
                     <div class="flex-1 overflow-y-auto p-6 space-y-4 chat-area bg-white/50 backdrop-blur-sm" id="chatContainer">
-                        <?php 
-                        while($msg = mysqli_fetch_assoc($q_msgs)): 
+                        <?php
+                        while($msg = mysqli_fetch_assoc($q_msgs)):
                             $is_me = ($msg['sender_id'] == $buyer_id);
-                            
+
                             // --- SMART PRODUCT DETECTION (Agar tampil di history chat) ---
                             $product_card = "";
                             if (preg_match('/Halo kak, saya tertarik dengan buku \*(.*?)\*/', $msg['message'], $matches)) {
@@ -261,7 +267,7 @@ $total_notif = $total_chat_unread;
                                 if(mysqli_num_rows($q_book_check) > 0) {
                                     $b_data = mysqli_fetch_assoc($q_book_check);
                                     $b_img_chat = !empty($b_data['image']) ? "../assets/uploads/books/".$b_data['image'] : "../assets/images/book_placeholder.png";
-                                    
+
                                     $product_card = '
                                     <div class="mt-2 mb-1 p-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3 bg-white/90">
                                         <img src="'.$b_img_chat.'" class="w-12 h-16 object-cover rounded-md">
@@ -290,8 +296,8 @@ $total_notif = $total_chat_unread;
                     </div>
 
                     <div class="bg-white border-t border-[var(--border-color)] relative z-20">
-                        
-                        <?php if ($context_book): 
+
+                        <?php if ($context_book):
                             $b_img = !empty($context_book['image']) ? "../assets/uploads/books/".$context_book['image'] : "../assets/images/book_placeholder.png";
                         ?>
                         <div class="px-4 pt-4 pb-2 border-b border-dashed border-gray-200">
@@ -313,16 +319,16 @@ $total_notif = $total_chat_unread;
 
                         <form method="POST" class="p-4 flex gap-3 items-end">
                             <input type="hidden" name="receiver_id" value="<?= $active_chat['id'] ?>">
-                            
-                            <?php 
-                                $default_msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : ''; 
+
+                            <?php
+                                $default_msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : '';
                             ?>
-                            
+
                             <div class="flex-1 relative">
                                 <input type="text" name="message" value="<?= $default_msg ?>" placeholder="Tulis pesan..." class="w-full pl-4 pr-10 py-3 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm" autocomplete="off" autofocus>
                                 <span class="material-symbols-outlined absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-[var(--deep-forest)]">sentiment_satisfied</span>
                             </div>
-                            
+
                             <button type="submit" name="send_message" class="p-3 bg-[var(--deep-forest)] text-white rounded-xl hover:bg-[var(--chocolate-brown)] transition-all shadow-md active:scale-95 flex items-center justify-center">
                                 <span class="material-symbols-outlined">send</span>
                             </button>

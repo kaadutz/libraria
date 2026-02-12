@@ -23,7 +23,7 @@ if (isset($_POST['register'])) {
     $address    = mysqli_real_escape_string($conn, $_POST['address']);
     $password   = $_POST['password'];
     $confirm_pw = $_POST['confirm_password'];
-    
+
     // NIK sekarang wajib untuk KEDUA ROLE
     $nik = mysqli_real_escape_string($conn, $_POST['nik']);
 
@@ -41,7 +41,7 @@ if (isset($_POST['register'])) {
     if ($password !== $confirm_pw) {
         $register_status = 'error';
         $message = "Konfirmasi kata sandi tidak cocok!";
-    } 
+    }
     // 2. Validasi NIK (Wajib Semua)
     else if (empty($nik)) {
         $register_status = 'error';
@@ -59,24 +59,24 @@ if (isset($_POST['register'])) {
     }
     else {
         // --- VALIDASI DUPLIKAT SPESIFIK ---
-        
+
         // 5a. Cek Email Saja
         $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email'");
-        
+
         // 5b. Cek NIK Saja
         $check_nik = mysqli_query($conn, "SELECT id FROM users WHERE nik = '$nik'");
 
         if (mysqli_num_rows($check_email) > 0) {
             $register_status = 'error';
             $message = "Email '$email' sudah terdaftar! Silakan gunakan email lain atau login.";
-        } 
+        }
         else if (mysqli_num_rows($check_nik) > 0) {
             $register_status = 'error';
             $message = "NIK '$nik' sudah terdaftar pada akun lain!";
-        } 
+        }
         else {
             // Jika Lolos Semua Validasi, Lanjut Upload & Insert
-            
+
             // 6. PROSES UPLOAD FOTO
             $profile_image = NULL;
             $upload_ok = true;
@@ -90,7 +90,7 @@ if (isset($_POST['register'])) {
                 $file_extension = strtolower(pathinfo($_FILES["profile_image"]["name"], PATHINFO_EXTENSION));
                 $new_filename = uniqid() . '_' . time() . '.' . $file_extension;
                 $target_file = $target_dir . $new_filename;
-                
+
                 $allowed = ['jpg', 'jpeg', 'png', 'gif'];
                 if (in_array($file_extension, $allowed)) {
                     if (move_uploaded_file($_FILES["profile_image"]["tmp_name"], $target_file)) {
@@ -112,13 +112,13 @@ if (isset($_POST['register'])) {
                 $val_img = ($profile_image) ? "'$profile_image'" : "NULL";
                 $val_bank_info = ($bank_info) ? "'$bank_info'" : "NULL";
                 $val_bank_acc = ($bank_account) ? "'$bank_account'" : "NULL";
-                
+
                 // Hash Password
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-                $query = "INSERT INTO users (email, password, full_name, nik, address, role, profile_image, bank_info, bank_account) 
+                $query = "INSERT INTO users (email, password, full_name, nik, address, role, profile_image, bank_info, bank_account)
                           VALUES ('$email', '$hashed_password', '$full_name', '$nik', '$address', '$role', $val_img, $val_bank_info, $val_bank_acc)";
-                
+
                 if (mysqli_query($conn, $query)) {
                     $register_status = 'success';
                     $message = "Akun berhasil dibuat! Silakan login untuk melanjutkan.";
@@ -144,11 +144,11 @@ if (isset($_POST['register'])) {
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Daftar Akun - Libraria</title>
-    
+
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700&family=Material+Icons+Outlined&display=swap" rel="stylesheet"/>
-    
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -158,11 +158,11 @@ if (isset($_POST['register'])) {
         theme: {
           extend: {
             colors: {
-              primary: "#3a5020",    
-              "chocolate": "#633d0c", 
-              "tan": "#b08144",       
-              "sage": "#d1d6a7",      
-              "cream": "#fefbe9",     
+              primary: "#3a5020",
+              "chocolate": "#633d0c",
+              "tan": "#b08144",
+              "sage": "#d1d6a7",
+              "cream": "#fefbe9",
               "background-light": "#fefbe9",
               "background-dark": "#1a1c18",
             },
@@ -184,7 +184,7 @@ if (isset($_POST['register'])) {
         },
       };
     </script>
-    
+
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -197,20 +197,28 @@ if (isset($_POST['register'])) {
         .custom-scroll::-webkit-scrollbar-thumb { background: #d1d6a7; border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #b08144; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        
+
         /* Custom Font untuk SweetAlert agar match */
         .swal2-popup {
             font-family: 'Inter', sans-serif !important;
             border-radius: 1.5rem !important;
         }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="bg-background-light h-screen flex items-center justify-center p-4 lg:p-0 overflow-hidden relative">
+
+<div class="absolute top-4 right-4 z-50">
+    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:text-primary hover:bg-primary/10 transition-all flex items-center justify-center group shadow-lg backdrop-blur-sm" title="Toggle Dark Mode">
+        <span class="material-icons-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+    </button>
+</div>
+
 
     <div class="absolute inset-0 paper-texture pointer-events-none z-0"></div>
 
     <div class="w-full h-full lg:w-[90%] lg:h-[90%] bg-white rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col lg:flex-row relative border border-white/50 z-10 backdrop-blur-sm">
-        
+
         <div class="hidden lg:flex w-5/12 bg-primary relative flex-col justify-between p-12 text-cream overflow-hidden">
             <div class="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-25" style="background-image: url('https://images.unsplash.com/photo-1507842217121-9e93c8aaf27c?q=80&w=1920&auto=format&fit=crop');"></div>
             <div class="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-[#2a3c15]"></div>
@@ -238,7 +246,7 @@ if (isset($_POST['register'])) {
         </div>
 
         <div class="w-full lg:w-7/12 bg-white flex flex-col h-full relative">
-            
+
             <div class="lg:hidden p-6 border-b border-stone-100 flex items-center justify-between bg-white z-20">
                 <span class="font-logo text-xl text-primary font-bold">LIBRARIA</span>
                 <a href="../index.php" class="text-stone-400"><span class="material-icons-outlined">close</span></a>
@@ -253,13 +261,13 @@ if (isset($_POST['register'])) {
 
                     <?php if($register_status == 'error' && empty($message)): ?>
                         <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-4 mb-8 rounded-r-lg text-sm flex items-center gap-3 shadow-sm animate-bounce">
-                            <span class="material-icons-outlined text-red-500">error</span> 
+                            <span class="material-icons-outlined text-red-500">error</span>
                             <span class="font-medium">Terjadi kesalahan sistem.</span>
                         </div>
                     <?php endif; ?>
 
                     <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
-                        
+
                         <div>
                             <label class="text-xs font-bold text-stone-400 uppercase tracking-widest ml-1 mb-3 block">Daftar Sebagai</label>
                             <div class="grid grid-cols-2 gap-4">
@@ -314,7 +322,7 @@ if (isset($_POST['register'])) {
                             <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">NIK (16 Digit)</label>
                             <div class="relative">
                                 <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">verified_user</span>
-                                <input type="number" name="nik" value="<?= isset($_POST['nik']) ? htmlspecialchars($_POST['nik']) : '' ?>" required 
+                                <input type="number" name="nik" value="<?= isset($_POST['nik']) ? htmlspecialchars($_POST['nik']) : '' ?>" required
                                     class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
                                     placeholder="Nomor Induk Kependudukan">
                             </div>
@@ -329,7 +337,7 @@ if (isset($_POST['register'])) {
                                 <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Nama Bank & Pemilik</label>
                                 <div class="relative">
                                     <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">account_balance</span>
-                                    <input type="text" name="bank_info" id="bank_info_input" 
+                                    <input type="text" name="bank_info" id="bank_info_input"
                                         class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
                                         placeholder="Cth: BCA a.n. Siti Aminah">
                                 </div>
@@ -338,7 +346,7 @@ if (isset($_POST['register'])) {
                                 <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Nomor Rekening</label>
                                 <div class="relative">
                                     <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">credit_card</span>
-                                    <input type="number" name="bank_account" id="bank_acc_input" 
+                                    <input type="number" name="bank_account" id="bank_acc_input"
                                         class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
                                         placeholder="Cth: 1234567890">
                                 </div>
@@ -359,7 +367,7 @@ if (isset($_POST['register'])) {
                             <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Alamat Email</label>
                             <div class="relative">
                                 <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">alternate_email</span>
-                                <input type="email" name="email" value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required 
+                                <input type="email" name="email" value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required
                                     class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
                                     placeholder="nama@email.com">
                             </div>
@@ -370,7 +378,7 @@ if (isset($_POST['register'])) {
                                 <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Kata Sandi</label>
                                 <div class="relative">
                                     <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">lock</span>
-                                    <input type="password" name="password" required 
+                                    <input type="password" name="password" required
                                         class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm" placeholder="••••••••">
                                 </div>
                             </div>
@@ -378,7 +386,7 @@ if (isset($_POST['register'])) {
                                 <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Konfirmasi</label>
                                 <div class="relative">
                                     <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">lock_reset</span>
-                                    <input type="password" name="confirm_password" required 
+                                    <input type="password" name="confirm_password" required
                                         class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm" placeholder="••••••••">
                                 </div>
                             </div>
@@ -405,14 +413,14 @@ if (isset($_POST['register'])) {
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <script>
         AOS.init();
 
         function toggleRole(role) {
             const labelName = document.getElementById('label_name');
             const inputName = document.querySelector('input[name="full_name"]');
-            
+
             const bankContainer = document.getElementById('bank_container');
             const bankInfoInput = document.getElementById('bank_info_input');
             const bankAccInput = document.getElementById('bank_acc_input');

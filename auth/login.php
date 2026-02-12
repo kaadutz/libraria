@@ -133,8 +133,16 @@ if (isset($_POST['login'])) {
             border-radius: 1.5rem !important;
         }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="bg-background-light h-screen flex items-center justify-center p-4 lg:p-0 overflow-hidden relative">
+
+<div class="absolute top-4 right-4 z-50">
+    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:text-primary hover:bg-primary/10 transition-all flex items-center justify-center group shadow-lg backdrop-blur-sm" title="Toggle Dark Mode">
+        <span class="material-icons-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+    </button>
+</div>
+
 
     <div class="absolute inset-0 paper-texture pointer-events-none z-0"></div>
 

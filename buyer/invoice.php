@@ -19,11 +19,11 @@ foreach ($order_ids as $oid) {
     $oid = (int)$oid;
     $q_ord = mysqli_query($conn, "SELECT * FROM orders WHERE id = '$oid'");
     $ord = mysqli_fetch_assoc($q_ord);
-    
+
     if($ord) {
         $grand_total_all += $ord['total_price'];
         $invoice_numbers[] = $ord['invoice_number'];
-        
+
         $q_items = mysqli_query($conn, "SELECT oi.*, b.title FROM order_items oi JOIN books b ON oi.book_id = b.id WHERE oi.order_id = '$oid'");
         $items = [];
         while($item = mysqli_fetch_assoc($q_items)) {
@@ -49,11 +49,11 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Quicksand:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
+
     <style>
         .font-struk { font-family: 'Courier Prime', monospace; }
         .font-ui { font-family: 'Quicksand', sans-serif; }
-        
+
         /* Efek Kertas Sobek (Jagged Edge) */
         .jagged-top {
             background: linear-gradient(135deg, transparent 10px, #ffffff 0) top left,
@@ -77,7 +77,7 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
             bottom: -10px;
             left: 0;
         }
-        
+
         /* Stempel Lunas */
         .stamp-paid {
             position: absolute;
@@ -100,12 +100,20 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
             mix-blend-mode: multiply;
         }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="bg-stone-800 min-h-screen flex flex-col items-center justify-center p-6 font-ui">
 
+<div class="absolute top-4 right-4 z-50 print:hidden">
+    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:text-primary hover:bg-primary/10 transition-all flex items-center justify-center group shadow-lg backdrop-blur-sm" title="Toggle Dark Mode">
+        <span class="material-icons-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+    </button>
+</div>
+
+
     <div id="receiptArea" class="bg-white p-8 w-full max-w-sm shadow-2xl relative my-10 mx-auto">
         <div class="jagged-top"></div>
-        
+
         <div class="stamp-paid">LUNAS</div>
 
         <div class="text-center mb-6 relative z-10">
@@ -129,7 +137,7 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
 
         <div class="space-y-2 mb-4 font-struk text-[11px] text-black relative z-10">
             <?php foreach($invoice_data as $inv): ?>
-                <?php foreach($inv['items'] as $item): 
+                <?php foreach($inv['items'] as $item):
                     $sub = $item['price_at_transaction'] * $item['qty'];
                 ?>
                 <div>
@@ -163,9 +171,9 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
         <div class="mt-8 text-center relative z-10">
             <p class="font-struk text-[10px] text-gray-500 uppercase">*** TERIMA KASIH ***</p>
             <p class="font-struk text-[10px] text-gray-500 mt-1">Barang yang sudah dibeli tidak dapat ditukar/dikembalikan</p>
-            
+
             <div class="mt-4 opacity-70">
-                <svg id="barcode" class="w-full h-8"></svg> 
+                <svg id="barcode" class="w-full h-8"></svg>
                 <div class="h-8 w-3/4 mx-auto bg-[repeating-linear-gradient(90deg,black_1px,transparent_1px,transparent_3px,black_3px,black_5px)]"></div>
             </div>
         </div>
@@ -188,20 +196,20 @@ $main_inv_num = $invoice_numbers[0] ?? 'INV';
     <script>
         function downloadImage() {
             const receipt = document.getElementById('receiptArea');
-            
+
             // Tambah padding sementara biar hasil crop bagus
-            receipt.style.margin = "0"; 
-            
-            html2canvas(receipt, { 
+            receipt.style.margin = "0";
+
+            html2canvas(receipt, {
                 scale: 3, // High Res
                 backgroundColor: null, // Transparan background luar
-                useCORS: true 
+                useCORS: true
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = 'Struk_Libraria_<?= date('Ymd_His') ?>.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                
+
                 // Balikin margin
                 receipt.style.margin = "2.5rem auto";
             });

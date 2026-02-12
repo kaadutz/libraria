@@ -20,13 +20,13 @@ $toast_type = "";
 if (isset($_POST['update_profile'])) {
     $full_name    = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email        = mysqli_real_escape_string($conn, $_POST['email']);
-    $address      = mysqli_real_escape_string($conn, $_POST['address']); 
+    $address      = mysqli_real_escape_string($conn, $_POST['address']);
     $bank_info    = mysqli_real_escape_string($conn, $_POST['bank_info']);
     $bank_account = mysqli_real_escape_string($conn, $_POST['bank_account']);
-    
+
     // VALIDASI DUPLIKAT EMAIL (Kecuali email sendiri)
     $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email' AND id != '$seller_id'");
-    
+
     // VALIDASI DUPLIKAT NAMA TOKO (Kecuali nama sendiri)
     $check_name = mysqli_query($conn, "SELECT id FROM users WHERE full_name = '$full_name' AND id != '$seller_id'");
 
@@ -42,10 +42,10 @@ if (isset($_POST['update_profile'])) {
         if (!empty($_FILES['profile_image']['name'])) {
             $target_dir = "../assets/uploads/profiles/";
             if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-            
+
             $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
             $new_name = "profile_" . $seller_id . "_" . time() . "." . $ext;
-            
+
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                 move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
                 $img_sql = ", profile_image='$new_name'";
@@ -54,15 +54,15 @@ if (isset($_POST['update_profile'])) {
         }
 
         // Update DB (NIK TIDAK DI-UPDATE KARENA READ ONLY)
-        $query = "UPDATE users SET 
-                  full_name='$full_name', 
-                  email='$email', 
-                  address='$address', 
-                  bank_info='$bank_info', 
-                  bank_account='$bank_account' 
-                  $img_sql 
+        $query = "UPDATE users SET
+                  full_name='$full_name',
+                  email='$email',
+                  address='$address',
+                  bank_info='$bank_info',
+                  bank_account='$bank_account'
+                  $img_sql
                   WHERE id='$seller_id'";
-        
+
         if (mysqli_query($conn, $query)) {
             $_SESSION['full_name'] = $full_name; // Update Session Name
             header("Location: profile.php?status=success_update");
@@ -140,7 +140,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    
+
     #sidebar, #main-content { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     #sidebar-header { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
     #sidebar-logo { height: 5rem; width: auto; }
@@ -159,13 +159,14 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .toast-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     .toast-exit { animation: fadeOut 0.4s ease forwards; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
 <div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3"></div>
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -219,7 +220,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -228,6 +229,11 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Profil Toko</h2></div>
             </div>
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?><span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span><?php endif; ?>
@@ -261,11 +267,11 @@ $total_notif = $total_new_orders + $total_unread_chat;
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-aos="fade-up">
-            
+
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-24 bg-[var(--deep-forest)]"></div>
-                    
+
                     <div class="relative z-10 w-32 h-32 mx-auto rounded-full p-1 bg-white border-4 border-[var(--cream-bg)] mb-4">
                         <img src="<?= $profile_pic ?>" id="previewImg" class="w-full h-full rounded-full object-cover">
                         <label for="uploadPhoto" class="absolute bottom-0 right-0 w-8 h-8 bg-[var(--warm-tan)] text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-[var(--chocolate-brown)] transition-colors shadow-lg">
@@ -275,7 +281,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
                     <h2 class="text-xl font-bold text-[var(--text-dark)] title-font"><?= $seller_name ?></h2>
                     <p class="text-sm text-[var(--text-muted)] font-medium mb-4">Seller Account</p>
-                    
+
                     <div class="flex justify-center gap-2 text-xs text-stone-500 mb-6">
                         <span class="px-3 py-1 rounded-full bg-stone-100 border border-stone-200">Bergabung: <?= date('M Y', strtotime($user['created_at'])) ?></span>
                     </div>
@@ -295,7 +301,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
             </div>
 
             <div class="lg:col-span-2 space-y-8">
-                
+
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow">
                     <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--border-color)]">
                         <span class="w-10 h-10 rounded-full bg-[var(--light-sage)] flex items-center justify-center text-[var(--deep-forest)]">
@@ -317,7 +323,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                 <input type="email" name="email" value="<?= $user['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 text-sm">
                             </div>
                         </div>
-                        
+
                         <div>
                             <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">NIK (Read Only)</label>
                             <input type="text" value="<?= $user['nik'] ?>" readonly class="w-full px-4 py-3 rounded-xl bg-gray-100 text-gray-500 border-transparent cursor-not-allowed text-sm focus:ring-0">
@@ -391,7 +397,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     // Sidebar Logic
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
     function toggleSidebar() {
         if (isSidebarOpen) {
             sidebar.classList.remove('w-64'); sidebar.classList.add('w-20', 'sidebar-collapsed');
@@ -427,7 +433,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
         toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95 transform transition-all duration-300 hover:scale-105`;
         toast.innerHTML = `<span class="material-symbols-outlined text-2xl">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-        
+
         toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); };
         container.appendChild(toast);
         setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); } }, 4000);

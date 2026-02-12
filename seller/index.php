@@ -137,6 +137,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
@@ -217,6 +218,11 @@ $total_notif = $total_new_orders + $total_unread_chat;
             </div>
             
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>

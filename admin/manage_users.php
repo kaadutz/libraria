@@ -34,11 +34,11 @@ if (isset($_POST['add_seller'])) {
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email     = mysqli_real_escape_string($conn, $_POST['email']);
     $nik       = mysqli_real_escape_string($conn, $_POST['nik']);
-    $password  = $_POST['password']; 
-    
+    $password  = $_POST['password'];
+
     // Validasi 1: Cek Email Duplikat
     $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email'");
-    
+
     // Validasi 2: Cek NIK Duplikat (Hanya jika NIK diisi)
     $nik_duplicate = false;
     if(!empty($nik)) {
@@ -55,9 +55,9 @@ if (isset($_POST['add_seller'])) {
     } else {
         // Jika NIK kosong, masukkan NULL agar tidak bentrok dengan UNIQUE KEY
         $nik_val = empty($nik) ? "NULL" : "'$nik'";
-        
+
         $query = "INSERT INTO users (full_name, email, nik, password, role) VALUES ('$full_name', '$email', $nik_val, '$password', 'seller')";
-        
+
         if (mysqli_query($conn, $query)) {
             $alert = "<script>alert('Penjual Berhasil Ditambahkan!'); window.location='manage_users.php';</script>";
         } else {
@@ -84,7 +84,7 @@ if (isset($_POST['edit_user'])) {
 
     // Cek duplikat email KECUALI milik user ini sendiri
     $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email='$email' AND id != '$id'");
-    
+
     // Cek duplikat NIK KECUALI milik user ini sendiri (hanya jika NIK diisi)
     $nik_duplicate = false;
     if(!empty($nik)) {
@@ -93,7 +93,7 @@ if (isset($_POST['edit_user'])) {
             $nik_duplicate = true;
         }
     }
-    
+
     if(mysqli_num_rows($check_email) > 0){
         $alert = "<script>alert('GAGAL: Email sudah digunakan user lain!');</script>";
     } elseif ($nik_duplicate) {
@@ -127,7 +127,7 @@ if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
     $check_status = mysqli_query($conn, "SELECT last_activity FROM users WHERE id='$id'");
     $u_data = mysqli_fetch_assoc($check_status);
-    
+
     $is_online = false;
     if ($u_data['last_activity']) {
         if (time() - strtotime($u_data['last_activity']) < 300) $is_online = true;
@@ -177,13 +177,13 @@ if(isset($_SESSION['user_id'])){
         --text-muted: #6B6155;
         --border-color: #E6E1D3;
     }
-    body { 
+    body {
         font-family: 'Quicksand', sans-serif;
         background-color: var(--cream-bg);
         color: var(--text-dark);
     }
     .title-font { font-weight: 700; }
-    
+
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
     #sidebar, #main-content, #sidebar-logo, .sidebar-text-wrapper, .menu-text { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -202,12 +202,13 @@ if(isset($_SESSION['user_id'])){
     .modal { transition: opacity 0.25s ease; }
     body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
     <?= isset($alert) ? $alert : '' ?>
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -243,7 +244,7 @@ if(isset($_SESSION['user_id'])){
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -252,6 +253,11 @@ if(isset($_SESSION['user_id'])){
                 <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Manajemen Pengguna</h2></div>
             </div>
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleModal('addSellerModal')" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-[var(--chocolate-brown)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-900/20 text-sm">
                     <span class="material-symbols-outlined text-[18px]">person_add</span> Tambah Penjual
                 </button>
@@ -290,18 +296,18 @@ if(isset($_SESSION['user_id'])){
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-aos="fade-up" data-aos-delay="100">
-            <?php while($usr = mysqli_fetch_assoc($users)): 
+            <?php while($usr = mysqli_fetch_assoc($users)):
                 $is_online = false;
                 if ($usr['last_activity']) {
                     if (time() - strtotime($usr['last_activity']) < 300) $is_online = true;
                 }
                 $user_pic = !empty($usr['profile_image']) ? "../assets/uploads/profiles/" . $usr['profile_image'] : "../assets/images/default_profile.png";
             ?>
-            
+
             <div class="bg-white rounded-[2.5rem] p-6 border border-[var(--border-color)] card-shadow hover:shadow-lg transition-all group relative overflow-hidden">
-                
+
                 <div class="absolute top-0 right-0 w-24 h-24 bg-[var(--light-sage)]/20 rounded-bl-[3rem] transition-all group-hover:scale-110 pointer-events-none z-0"></div>
-                
+
                 <div class="flex items-start justify-between mb-6 relative z-10">
                     <div class="flex items-center gap-4">
                         <img src="<?= $user_pic ?>" class="w-16 h-16 rounded-2xl object-cover shadow-sm border border-stone-100 bg-stone-100" onerror="this.src='../assets/images/logo.png'">
@@ -312,14 +318,14 @@ if(isset($_SESSION['user_id'])){
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="flex gap-2">
-                        <button type="button" 
-                                onclick="openEditModal('<?= $usr['id'] ?>', '<?= htmlspecialchars($usr['full_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['nik'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['role'], ENT_QUOTES) ?>', `<?= htmlspecialchars($usr['address'], ENT_QUOTES) ?>`)" 
+                        <button type="button"
+                                onclick="openEditModal('<?= $usr['id'] ?>', '<?= htmlspecialchars($usr['full_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['nik'], ENT_QUOTES) ?>', '<?= htmlspecialchars($usr['role'], ENT_QUOTES) ?>', `<?= htmlspecialchars($usr['address'], ENT_QUOTES) ?>`)"
                                 class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-[var(--warm-tan)] hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
-                        
+
                         <?php if(!$is_online): ?>
                         <a href="?delete=<?= $usr['id'] ?>" onclick="return confirm('Hapus pengguna ini selamanya?')" class="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-red-500 hover:text-white transition-all shadow-sm cursor-pointer z-20 relative">
                             <span class="material-symbols-outlined text-lg">delete</span>
@@ -402,7 +408,7 @@ if(isset($_SESSION['user_id'])){
         </div>
         <form action="" method="POST" class="space-y-4">
             <input type="hidden" name="id" id="edit_id">
-            
+
             <div>
                 <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nama Lengkap / Toko</label>
                 <input type="text" name="full_name" id="edit_name" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
@@ -449,7 +455,7 @@ if(isset($_SESSION['user_id'])){
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {

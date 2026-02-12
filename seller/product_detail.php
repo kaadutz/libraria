@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-date_default_timezone_set('Asia/Jakarta'); 
+date_default_timezone_set('Asia/Jakarta');
 include '../config/db.php';
 
 // Cek Keamanan
@@ -24,9 +24,9 @@ $book_id = mysqli_real_escape_string($conn, $_GET['id']);
 
 // Ambil Data Buku (Hanya milik seller yang sedang login)
 $query = mysqli_query($conn, "
-    SELECT b.*, c.name as category_name 
-    FROM books b 
-    JOIN categories c ON b.category_id = c.id 
+    SELECT b.*, c.name as category_name
+    FROM books b
+    JOIN categories c ON b.category_id = c.id
     WHERE b.id = '$book_id' AND b.seller_id = '$seller_id'
 ");
 
@@ -81,7 +81,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    
+
     #sidebar, #main-content, #sidebar-logo, .sidebar-text-wrapper, .menu-text { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     #sidebar-header { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
     #sidebar-logo { height: 5rem; width: auto; }
@@ -94,11 +94,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -107,13 +108,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
-        
+
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
             <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group text-sm">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
                 <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            
+
             <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group text-sm">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori</span>
@@ -149,7 +150,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
         </nav>
-        
+
         <div class="p-3 border-t border-[var(--border-color)]">
             <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group text-sm">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
@@ -159,22 +160,27 @@ $total_notif = $total_new_orders + $total_unread_chat;
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                
+
                 <div class="hidden md:flex items-center gap-2 text-sm font-bold text-stone-400">
                     <a href="products.php" class="hover:text-[var(--deep-forest)] transition-colors">Produk Saya</a>
                     <span class="material-symbols-outlined text-xs">arrow_forward_ios</span>
                     <span class="text-[var(--deep-forest)]">Detail</span>
                 </div>
             </div>
-            
+
             <div class="flex items-center gap-4 relative">
-                
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
+
                 <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
@@ -198,7 +204,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                             </div>
                         </a>
                         <?php endif; ?>
-                        
+
                         <?php if($total_unread_chat > 0): ?>
                         <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
                             <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
@@ -231,15 +237,15 @@ $total_notif = $total_new_orders + $total_unread_chat;
         </header>
 
         <div class="bg-white rounded-[2.5rem] p-8 lg:p-10 border border-[var(--border-color)] card-shadow relative overflow-hidden" data-aos="fade-up">
-            
+
             <div class="flex flex-col lg:flex-row gap-10">
-                
+
                 <div class="lg:w-4/12 flex flex-col gap-4">
                     <div class="aspect-[3/4] rounded-3xl overflow-hidden bg-stone-100 border border-[var(--border-color)] shadow-inner relative group">
                         <img src="<?= $img_src ?>" alt="<?= $book['title'] ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
                     </div>
-                    
+
                     <div class="text-center">
                          <span class="px-4 py-2 bg-[var(--light-sage)]/30 text-[var(--deep-forest)] rounded-full text-xs font-bold uppercase tracking-widest border border-[var(--light-sage)]">
                             <?= $book['category_name'] ?>
@@ -250,7 +256,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <div class="lg:w-8/12 flex flex-col">
                     <div class="mb-6">
                         <h1 class="text-3xl lg:text-4xl font-bold text-[var(--text-dark)] leading-tight mb-2 title-font"><?= $book['title'] ?></h1>
-                        
+
                         <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm mb-2">
                             <span class="material-symbols-outlined text-lg">person</span>
                             <span class="font-semibold">Penulis:</span>
@@ -268,7 +274,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                             <p class="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-1">Harga Jual</p>
                             <p class="text-2xl font-bold text-[var(--chocolate-brown)]">Rp <?= number_format($book['sell_price'], 0, ',', '.') ?></p>
                         </div>
-                        
+
                         <div class="p-5 rounded-3xl bg-white border border-[var(--border-color)]">
                             <p class="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-1">Harga Modal</p>
                             <p class="text-xl font-bold text-stone-600">Rp <?= number_format($book['cost_price'], 0, ',', '.') ?></p>
@@ -323,7 +329,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {

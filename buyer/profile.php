@@ -22,7 +22,7 @@ if (isset($_POST['update_profile'])) {
 
     // CEK DUPLIKAT (Email atau NIK sudah dipakai orang lain?)
     $check = mysqli_query($conn, "SELECT id FROM users WHERE (email = '$email' OR nik = '$nik') AND id != '$buyer_id'");
-    
+
     if (mysqli_num_rows($check) > 0) {
         // JIKA DUPLIKAT -> MUNCUL POPUP ERROR
         $swal_alert = "
@@ -37,7 +37,7 @@ if (isset($_POST['update_profile'])) {
         </script>";
     } else {
         // JIKA AMAN -> LANJUT UPDATE
-        
+
         // Logic Upload Foto
         $img_sql = "";
         if (!empty($_FILES['profile_image']['name'])) {
@@ -46,7 +46,7 @@ if (isset($_POST['update_profile'])) {
 
             $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
             $new_name = "profile_" . $buyer_id . "_" . time() . "." . $ext;
-            
+
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                 move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_dir . $new_name);
                 $img_sql = ", profile_image='$new_name'";
@@ -127,7 +127,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -146,10 +146,11 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
         .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
-        
+
         /* Custom Font untuk SweetAlert */
         .swal2-popup { font-family: 'Quicksand', sans-serif !important; border-radius: 1.5rem !important; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
@@ -171,6 +172,11 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                 </div>
 
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
@@ -220,11 +226,11 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
-        
+
         <h1 class="text-3xl lg:text-4xl font-bold text-[var(--deep-forest)] title-font mb-8 text-center" data-aos="fade-down">Pengaturan Akun</h1>
 
         <div class="flex flex-col lg:flex-row gap-8" data-aos="fade-up">
-            
+
             <div class="lg:w-1/3 space-y-6">
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-24 bg-[var(--deep-forest)] opacity-10"></div>
@@ -236,7 +242,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                         </div>
                         <h2 class="text-xl font-bold text-[var(--text-dark)]"><?= $user['full_name'] ?></h2>
                         <p class="text-sm text-[var(--text-muted)]"><?= $user['email'] ?></p>
-                        
+
                         <div class="mt-6 pt-6 border-t border-dashed border-[var(--border-color)]">
                             <p class="text-xs text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">Bergabung Sejak</p>
                             <p class="text-sm font-bold text-[var(--deep-forest)]"><?= date('d F Y', strtotime($user['created_at'])) ?></p>
@@ -255,7 +261,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
             </div>
 
             <div class="lg:w-2/3 space-y-8">
-                
+
                 <form method="POST" enctype="multipart/form-data" class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow">
                     <h3 class="text-xl font-bold text-[var(--deep-forest)] mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined">edit_square</span> Edit Informasi
@@ -270,12 +276,12 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
                             <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Email</label>
                             <input type="email" name="email" value="<?= $user['email'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]" required>
                         </div>
-                        
+
                         <div>
                             <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">NIK / Identitas</label>
                             <input type="number" name="nik" value="<?= $user['nik'] ?>" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm font-bold text-[var(--text-dark)]">
                         </div>
-                        
+
                         <div>
                             <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2">Ganti Foto Profil</label>
                             <input type="file" name="profile_image" id="fileInput" accept="image/*" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--light-sage)] file:text-[var(--deep-forest)] hover:file:bg-[var(--warm-tan)] hover:file:text-white transition-all cursor-pointer">
@@ -296,7 +302,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
 
                 <form method="POST" class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow relative overflow-hidden">
                     <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-red-50 rounded-full blur-3xl opacity-50"></div>
-                    
+
                     <h3 class="text-xl font-bold text-[var(--deep-forest)] mb-6 flex items-center gap-2 relative z-10">
                         <span class="material-symbols-outlined">lock_reset</span> Ganti Password
                     </h3>
@@ -364,7 +370,7 @@ $total_notif = mysqli_fetch_assoc($query_notif)['total'];
             }
         });
     </script>
-    
+
     <?= $swal_alert ?>
 
 </body>

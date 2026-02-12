@@ -67,12 +67,13 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
         .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
-        
+
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         .toast-enter { animation: slideIn 0.3s ease-out forwards; }
         .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
@@ -96,6 +97,11 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                 </div>
 
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
@@ -147,21 +153,21 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
-        
+
         <h1 class="text-3xl font-bold text-[var(--deep-forest)] title-font mb-8" data-aos="fade-right">Keranjang Belanja</h1>
 
         <?php if(mysqli_num_rows($cart_items) > 0): ?>
         <div class="flex flex-col lg:flex-row gap-8" data-aos="fade-up">
-            
+
             <div class="flex-1 space-y-6">
-                <?php 
+                <?php
                 $current_seller = "";
-                while($item = mysqli_fetch_assoc($cart_items)): 
+                while($item = mysqli_fetch_assoc($cart_items)):
                     $subtotal = $item['sell_price'] * $item['qty'];
                     $grand_total += $subtotal;
                     $total_items_count += $item['qty'];
-                    
-                    if($current_seller != $item['seller_name']): 
+
+                    if($current_seller != $item['seller_name']):
                         $current_seller = $item['seller_name'];
                 ?>
                     <div class="flex items-center gap-2 mt-6 mb-2">
@@ -171,7 +177,7 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                 <?php endif; ?>
 
                 <div id="cart-item-<?= $item['cart_id'] ?>" class="bg-white rounded-[2rem] p-4 border border-[var(--border-color)] card-shadow flex gap-4 items-center relative overflow-hidden group">
-                    
+
                     <div class="w-20 h-28 bg-[var(--cream-bg)] rounded-xl overflow-hidden shrink-0 border border-[var(--border-color)]">
                         <img src="<?= !empty($item['image']) ? '../assets/uploads/books/'.$item['image'] : '../assets/images/book_placeholder.png' ?>" class="w-full h-full object-cover">
                     </div>
@@ -179,13 +185,13 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                     <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-[var(--text-dark)] text-lg line-clamp-1 mb-1"><?= $item['title'] ?></h4>
                         <p class="text-[var(--chocolate-brown)] font-bold text-sm mb-3">Rp <?= number_format($item['sell_price'], 0, ',', '.') ?></p>
-                        
+
                         <div class="flex items-center gap-4">
                             <div class="flex items-center border border-[var(--border-color)] rounded-xl px-1 py-1">
                                 <button onclick="updateCart(<?= $item['cart_id'] ?>, 'decrease')" class="w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--cream-bg)] rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
-                                
+
                                 <span id="qty-display-<?= $item['cart_id'] ?>" class="w-8 text-center text-sm font-bold"><?= $item['qty'] ?></span>
-                                
+
                                 <button onclick="updateCart(<?= $item['cart_id'] ?>, 'increase')" class="w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--cream-bg)] rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
                             </div>
                             <span class="text-xs text-[var(--text-muted)]">Stok: <?= $item['stock'] ?></span>
@@ -202,7 +208,7 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
             <div class="lg:w-96 shrink-0">
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow sticky top-32">
                     <h3 class="text-xl font-bold text-[var(--deep-forest)] mb-6 title-font">Ringkasan Belanja</h3>
-                    
+
                     <div class="space-y-3 mb-6 pb-6 border-b border-dashed border-[var(--border-color)]">
                         <div class="flex justify-between text-sm text-[var(--text-muted)]">
                             <span>Total Estimasi</span>
@@ -220,7 +226,7 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                             Lanjut Pembayaran <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                         </a>
                     </div>
-                    
+
                     <p class="text-[10px] text-center text-[var(--text-muted)] mt-4">
                         <span class="material-symbols-outlined text-sm align-middle">verified_user</span> Transaksi Aman & Terpercaya
                     </p>
@@ -278,7 +284,7 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    
+
                     // CEK HASIL AKSI: APAKAH UPDATED ATAU REMOVED?
                     if (data.action_result === 'removed') {
                         // Jika dihapus (karena remove ATAU qty jadi 0)
@@ -289,9 +295,9 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                             itemCard.style.transform = "translateX(50px)";
                             setTimeout(() => itemCard.remove(), 300);
                         }
-                        
+
                         showToast(data.message, 'success');
-                        
+
                         // Jika keranjang jadi kosong total, reload page
                         if(data.cart_badge == 0) setTimeout(() => location.reload(), 500);
 
@@ -317,7 +323,7 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
                     if (data.code === 'item_not_found') {
                         const itemCard = document.getElementById('cart-item-' + cartId);
                         if(itemCard) itemCard.remove();
-                        location.reload(); 
+                        location.reload();
                     } else {
                         showToast(data.message, 'error');
                     }
@@ -337,7 +343,7 @@ $cart_count = mysqli_fetch_assoc($query_cart_count)['total'] ?? 0;
 
             toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95`;
             toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-            
+
             toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); };
             container.appendChild(toast);
             setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); } }, 3000);

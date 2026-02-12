@@ -31,16 +31,16 @@ $toast_type = "";
 // TAMBAH PRODUK
 if (isset($_POST['add_product'])) {
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
-    $author      = mysqli_real_escape_string($conn, $_POST['author']); 
+    $author      = mysqli_real_escape_string($conn, $_POST['author']);
     $category_id = mysqli_real_escape_string($conn, $_POST['category_id']);
     $cost_price  = str_replace('.', '', $_POST['cost_price']);
     $sell_price  = str_replace('.', '', $_POST['sell_price']);
     $stock       = mysqli_real_escape_string($conn, $_POST['stock']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
-    
+
     // VALIDASI DUPLIKAT
     $check_duplicate = mysqli_query($conn, "SELECT id FROM books WHERE title = '$title' AND seller_id = '$seller_id'");
-    
+
     if (mysqli_num_rows($check_duplicate) > 0) {
         $toast_message = "Gagal: Judul buku sudah ada di toko Anda!";
         $toast_type = "error";
@@ -57,9 +57,9 @@ if (isset($_POST['add_product'])) {
             }
         }
 
-        $query = "INSERT INTO books (seller_id, category_id, title, author, description, image, stock, cost_price, sell_price) 
+        $query = "INSERT INTO books (seller_id, category_id, title, author, description, image, stock, cost_price, sell_price)
                   VALUES ('$seller_id', '$category_id', '$title', '$author', '$description', '$image', '$stock', '$cost_price', '$sell_price')";
-        
+
         if (mysqli_query($conn, $query)) {
             header("Location: products.php?status=success_add");
             exit;
@@ -74,7 +74,7 @@ if (isset($_POST['add_product'])) {
 if (isset($_POST['edit_product'])) {
     $id          = $_POST['id'];
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
-    $author      = mysqli_real_escape_string($conn, $_POST['author']); 
+    $author      = mysqli_real_escape_string($conn, $_POST['author']);
     $category_id = mysqli_real_escape_string($conn, $_POST['category_id']);
     $cost_price  = str_replace('.', '', $_POST['cost_price']);
     $sell_price  = str_replace('.', '', $_POST['sell_price']);
@@ -93,7 +93,7 @@ if (isset($_POST['edit_product'])) {
             $target_dir = "../assets/uploads/books/";
             $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
             $new_name = "book_" . time() . "_" . uniqid() . "." . $ext;
-            
+
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                 move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $new_name);
                 $img_sql = ", image='$new_name'";
@@ -104,10 +104,10 @@ if (isset($_POST['edit_product'])) {
             }
         }
 
-        $query = "UPDATE books SET title='$title', author='$author', category_id='$category_id', cost_price='$cost_price', 
-                  sell_price='$sell_price', stock='$stock', description='$description' $img_sql 
+        $query = "UPDATE books SET title='$title', author='$author', category_id='$category_id', cost_price='$cost_price',
+                  sell_price='$sell_price', stock='$stock', description='$description' $img_sql
                   WHERE id='$id' AND seller_id='$seller_id'";
-                  
+
         if (mysqli_query($conn, $query)) {
             header("Location: products.php?status=success_edit");
             exit;
@@ -118,7 +118,7 @@ if (isset($_POST['edit_product'])) {
 // HAPUS PRODUK (DENGAN CEK STOK)
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
-    
+
     // Cek Stok Dulu
     $check_stock = mysqli_query($conn, "SELECT stock, image FROM books WHERE id='$id' AND seller_id='$seller_id'");
     $data = mysqli_fetch_assoc($check_stock);
@@ -139,7 +139,7 @@ if (isset($_GET['delete'])) {
 }
 
 // --- 3. DATA PRODUK & PAGINATION ---
-$limit = 8; 
+$limit = 8;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page - 1) * $limit;
 
@@ -148,11 +148,11 @@ $total_data = mysqli_fetch_assoc($count_query)['total'];
 $total_pages = ceil($total_data / $limit);
 
 $books = mysqli_query($conn, "
-    SELECT b.*, c.name as category_name 
-    FROM books b 
-    JOIN categories c ON b.category_id = c.id 
-    WHERE b.seller_id = '$seller_id' 
-    ORDER BY b.stock ASC, b.created_at DESC 
+    SELECT b.*, c.name as category_name
+    FROM books b
+    JOIN categories c ON b.category_id = c.id
+    WHERE b.seller_id = '$seller_id'
+    ORDER BY b.stock ASC, b.created_at DESC
     LIMIT $start, $limit
 "); // Added Order by Stock ASC biar yg kosong muncul diatas
 $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
@@ -187,12 +187,12 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    
+
     .fix-mask {
         -webkit-mask-image: -webkit-radial-gradient(white, black);
         mask-image: radial-gradient(white, black);
     }
-    
+
     /* Toast Animation */
     @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -214,13 +214,14 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     .modal { transition: opacity 0.25s ease; }
     body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
 <div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3"></div>
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -229,13 +230,13 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
-        
+
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
             <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
                 <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            
+
             <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori</span>
@@ -275,7 +276,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
             </a>
         </nav>
-        
+
         <div class="p-3 border-t border-[var(--border-color)]">
             <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
@@ -285,7 +286,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -293,8 +294,13 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 </button>
                 <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Manajemen Produk</h2></div>
             </div>
-            
+
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleModal('addProductModal')" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-[var(--chocolate-brown)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-900/20 text-sm">
                     <span class="material-symbols-outlined text-[18px]">add_circle</span> Tambah Produk
                 </button>
@@ -322,7 +328,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                             </div>
                         </a>
                         <?php endif; ?>
-                        
+
                         <?php if($total_unread_chat > 0): ?>
                         <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
                             <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
@@ -362,25 +368,25 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-aos="fade-up">
             <?php if(mysqli_num_rows($books) > 0): ?>
-                <?php while($book = mysqli_fetch_assoc($books)): 
+                <?php while($book = mysqli_fetch_assoc($books)):
                     $img_src = !empty($book['image']) ? "../assets/uploads/books/".$book['image'] : "../assets/images/book_placeholder.png";
-                    $author = !empty($book['author']) ? $book['author'] : 'Penulis Tidak Diketahui'; 
-                    
+                    $author = !empty($book['author']) ? $book['author'] : 'Penulis Tidak Diketahui';
+
                     // --- LOGIKA TAMPILAN STOK HABIS ---
                     $is_out_of_stock = ($book['stock'] <= 0);
                     $card_style = $is_out_of_stock ? "border-red-200 opacity-90" : "border-[var(--border-color)]";
                     $bg_badge = $is_out_of_stock ? "bg-red-500 text-white" : "bg-white/90 backdrop-blur text-[var(--deep-forest)]";
                 ?>
                 <div class="bg-white rounded-[2rem] border <?= $card_style ?> card-shadow group relative flex flex-col h-full hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden fix-mask">
-                    
+
                     <div class="relative aspect-[3/4] bg-[var(--cream-bg)] overflow-hidden">
-                        
+
                         <span class="absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border border-transparent <?= $bg_badge ?>">
                             <?= $is_out_of_stock ? "STOK HABIS" : $book['category_name'] ?>
                         </span>
 
                         <img src="<?= $img_src ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 <?= $is_out_of_stock ? 'grayscale-[0.5]' : '' ?>">
-                        
+
                         <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
                             <p class="<?= $is_out_of_stock ? 'text-red-300' : 'text-white' ?> text-xs font-bold flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm">inventory_2</span> Stok: <?= $book['stock'] ?>
@@ -390,11 +396,11 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
                     <div class="p-5 flex-1 flex flex-col">
                         <h3 class="text-lg font-bold text-[var(--text-dark)] leading-tight mb-1 line-clamp-2 min-h-[3rem]" title="<?= $book['title'] ?>"><?= $book['title'] ?></h3>
-                        
+
                         <p class="text-xs text-[var(--text-muted)] mb-3 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[14px]">person</span> <?= $author ?>
                         </p>
-                        
+
                         <div class="flex justify-between items-center mb-4">
                             <div>
                                 <p class="text-[10px] text-[var(--text-muted)] font-bold uppercase">Harga Jual</p>
@@ -403,13 +409,13 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                         </div>
 
                         <div class="mt-auto pt-4 border-t border-dashed border-[var(--border-color)] flex items-center gap-2">
-                            
+
                             <a href="product_detail.php?id=<?= $book['id'] ?>" class="flex-1 py-2 bg-[var(--light-sage)]/20 text-[var(--deep-forest)] rounded-xl font-bold text-xs flex items-center justify-center gap-1 hover:bg-[var(--deep-forest)] hover:text-white transition-all">
                                 <span class="material-symbols-outlined text-base">visibility</span>
                             </a>
 
-                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($book)) ?>)" 
-                                    class="w-full flex-1 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all <?= $is_out_of_stock ? 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white ring-2 ring-green-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' ?>" 
+                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($book)) ?>)"
+                                    class="w-full flex-1 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all <?= $is_out_of_stock ? 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white ring-2 ring-green-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' ?>"
                                     title="<?= $is_out_of_stock ? 'Isi Stok Sekarang' : 'Edit Produk' ?>">
                                 <span class="material-symbols-outlined text-base"><?= $is_out_of_stock ? 'add_box' : 'edit' ?></span>
                                 <?= $is_out_of_stock ? 'Isi Stok' : 'Edit' ?>
@@ -522,7 +528,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {
@@ -562,7 +568,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
         toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95 transform transition-all duration-300 hover:scale-105`;
         toast.innerHTML = `<span class="material-symbols-outlined text-2xl">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-        
+
         toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); };
         container.appendChild(toast);
         setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); } }, 4000);

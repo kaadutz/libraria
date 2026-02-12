@@ -143,6 +143,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
         padding-right: 0;
     }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
@@ -202,6 +203,11 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
             </div>
 
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
                     
                     <img src="<?= $profile_pic ?>" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">

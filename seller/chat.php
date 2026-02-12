@@ -17,7 +17,7 @@ $seller_name = $_SESSION['full_name'];
 if (isset($_POST['send_message'])) {
     $receiver_id = $_POST['receiver_id']; // ID Pembeli
     $message = mysqli_real_escape_string($conn, $_POST['message']);
-    
+
     if (!empty($message)) {
         $q_send = "INSERT INTO messages (sender_id, receiver_id, message, is_read, created_at) VALUES ('$seller_id', '$receiver_id', '$message', 0, NOW())";
         mysqli_query($conn, $q_send);
@@ -44,15 +44,15 @@ $chat_list = mysqli_query($conn, $q_chats);
 $active_chat = null;
 if (isset($_GET['uid'])) {
     $chat_uid = mysqli_real_escape_string($conn, $_GET['uid']);
-    
+
     // Ambil Data Pembeli
     $q_buyer = mysqli_query($conn, "SELECT * FROM users WHERE id = '$chat_uid'");
     if(mysqli_num_rows($q_buyer) > 0) {
         $active_chat = mysqli_fetch_assoc($q_buyer);
-        
+
         // Tandai pesan sudah dibaca
         mysqli_query($conn, "UPDATE messages SET is_read = 1 WHERE sender_id = '$chat_uid' AND receiver_id = '$seller_id'");
-        
+
         // Ambil isi chat
         $q_msgs = mysqli_query($conn, "SELECT * FROM messages WHERE (sender_id = '$seller_id' AND receiver_id = '$chat_uid') OR (sender_id = '$chat_uid' AND receiver_id = '$seller_id') ORDER BY created_at ASC");
     }
@@ -93,12 +93,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
     }
     body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
     .font-logo { font-family: 'Cinzel', serif; }
-    
+
     /* Chat Styling */
     .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 1rem; position: relative; }
     .chat-own { background-color: var(--deep-forest); color: white; border-bottom-right-radius: 0; margin-left: auto; }
     .chat-other { background-color: white; border: 1px solid var(--border-color); border-bottom-left-radius: 0; color: var(--text-dark); }
-    
+
     .chat-area::-webkit-scrollbar { width: 6px; }
     .chat-area::-webkit-scrollbar-track { background: transparent; }
     .chat-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -115,11 +115,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -128,7 +129,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
-        
+
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
             <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
@@ -165,7 +166,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
             </a>
         </nav>
-        
+
         <div class="p-3 border-t border-[var(--border-color)]">
             <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
@@ -175,7 +176,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 h-screen overflow-hidden flex flex-col transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-4 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] shrink-0 shadow-sm">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -183,9 +184,14 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 </button>
                 <h2 class="text-xl font-bold text-[var(--text-dark)] hidden md:block">Chat Pelanggan</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
-                <div class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] shadow-sm">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
+<div class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] shadow-sm">
                     <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <p class="text-xs font-bold hidden sm:block text-[var(--text-dark)]"><?= $seller_name ?></p>
                 </div>
@@ -193,15 +199,15 @@ $total_notif = $total_new_orders + $total_unread_chat;
         </header>
 
         <div class="flex-1 bg-white rounded-[2.5rem] border border-[var(--border-color)] shadow-xl overflow-hidden flex flex-col md:flex-row relative">
-            
+
             <div class="w-full md:w-80 border-r border-[var(--border-color)] bg-gray-50/50 flex flex-col h-full <?= $active_chat ? 'hidden md:flex' : 'flex' ?>">
                 <div class="p-4 border-b border-[var(--border-color)] bg-white">
                     <input type="text" placeholder="Cari nama pembeli..." class="w-full px-4 py-2 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 text-sm">
                 </div>
-                
+
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
                     <?php if(mysqli_num_rows($chat_list) > 0): ?>
-                        <?php while($chat = mysqli_fetch_assoc($chat_list)): 
+                        <?php while($chat = mysqli_fetch_assoc($chat_list)):
                             $c_img = !empty($chat['profile_image']) ? "../assets/uploads/profiles/".$chat['profile_image'] : "../assets/images/default_profile.png";
                             $active = ($active_chat && $active_chat['id'] == $chat['id']) ? 'bg-[var(--light-sage)]/30 border-[var(--light-sage)]' : 'bg-white border-transparent hover:bg-gray-50';
                         ?>
@@ -230,8 +236,8 @@ $total_notif = $total_new_orders + $total_unread_chat;
             </div>
 
             <div class="flex-1 flex flex-col bg-[url('../assets/images/chat-bg.png')] bg-repeat h-full <?= $active_chat ? 'flex' : 'hidden md:flex' ?>">
-                
-                <?php if($active_chat): 
+
+                <?php if($active_chat):
                     $a_img = !empty($active_chat['profile_image']) ? "../assets/uploads/profiles/".$active_chat['profile_image'] : "../assets/images/default_profile.png";
                 ?>
                     <div class="p-4 border-b border-[var(--border-color)] bg-white flex items-center gap-4 shadow-sm z-10">
@@ -246,10 +252,10 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     </div>
 
                     <div class="flex-1 overflow-y-auto p-6 space-y-4 chat-area bg-white/50 backdrop-blur-sm" id="chatContainer">
-                        <?php 
-                        while($msg = mysqli_fetch_assoc($q_msgs)): 
+                        <?php
+                        while($msg = mysqli_fetch_assoc($q_msgs)):
                             $is_me = ($msg['sender_id'] == $seller_id);
-                            
+
                             // --- SMART PRODUCT DETECTION ---
                             // Cek apakah pesan berisi template tanya produk
                             $product_card = "";
@@ -260,7 +266,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                 if(mysqli_num_rows($q_book_check) > 0) {
                                     $b_data = mysqli_fetch_assoc($q_book_check);
                                     $b_img = !empty($b_data['image']) ? "../assets/uploads/books/".$b_data['image'] : "../assets/images/book_placeholder.png";
-                                    
+
                                     $product_card = '
                                     <div class="mt-2 mb-1 p-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3">
                                         <img src="'.$b_img.'" class="w-12 h-16 object-cover rounded-md">
@@ -324,7 +330,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {

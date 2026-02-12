@@ -55,19 +55,20 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
         }
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
-        
+
         /* Accordion Animation */
         .faq-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .faq-item.active .faq-content { max-height: 500px; transition: max-height 0.5s ease-in; }
         .faq-item.active .icon-rotator { transform: rotate(180deg); }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
         <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center gap-4">
-                
+
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
                     <div class="flex flex-col">
@@ -83,6 +84,11 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
                 </div>
 
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
@@ -144,7 +150,7 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
-        
+
         <div class="text-center mb-12" data-aos="fade-down">
             <span class="material-symbols-outlined text-5xl text-[var(--warm-tan)] mb-4">support_agent</span>
             <h1 class="text-3xl lg:text-4xl font-bold text-[var(--deep-forest)] title-font mb-2">Pusat Bantuan</h1>
@@ -152,7 +158,7 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <div class="lg:col-span-2 space-y-4" data-aos="fade-right">
                 <h3 class="text-xl font-bold text-[var(--text-dark)] mb-6">Pertanyaan Umum (FAQ)</h3>
 
@@ -187,12 +193,12 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
                     <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                     <h4 class="font-bold text-lg mb-4 flex items-center gap-2"><span class="material-symbols-outlined">support_agent</span> Layanan Pelanggan</h4>
                     <p class="text-xs text-white/80 mb-6 leading-relaxed">Tim kami siap membantu Anda Senin - Jumat (09:00 - 17:00).</p>
-                    
+
                     <a href="https://wa.me/628123456789" target="_blank" class="flex items-center gap-3 bg-white/20 p-3 rounded-xl mb-3 hover:bg-white/30 transition-colors">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="w-6 h-6">
                         <span class="text-sm font-bold">+62 812-3456-7890</span>
                     </a>
-                    
+
                     <a href="mailto:support@libraria.com" class="flex items-center gap-3 bg-white/20 p-3 rounded-xl hover:bg-white/30 transition-colors">
                         <span class="material-symbols-outlined">mail</span>
                         <span class="text-sm font-bold">support@libraria.com</span>

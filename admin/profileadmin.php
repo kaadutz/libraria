@@ -17,11 +17,11 @@ $alert = '';
 if (isset($_POST['update_profile'])) {
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email     = mysqli_real_escape_string($conn, $_POST['email']);
-    
+
     // 1. VALIDASI DUPLIKAT EMAIL
     // Cek apakah email sudah dipakai user lain (selain user yang sedang login)
     $check_duplicate = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email' AND id != '$user_id'");
-    
+
     if (mysqli_num_rows($check_duplicate) > 0) {
         // Jika ditemukan data, tampilkan Pop Up Gagal
         $alert = "<script>
@@ -29,10 +29,10 @@ if (isset($_POST['update_profile'])) {
         </script>";
     } else {
         // Jika aman, Lanjutkan Proses Update
-        
+
         // Update Text Data Dulu
         $update = "UPDATE users SET full_name = '$full_name', email = '$email' WHERE id = '$user_id'";
-        
+
         if(mysqli_query($conn, $update)) {
             $_SESSION['full_name'] = $full_name; // Update session nama
             $alert = "<script>alert('Profil Berhasil Diperbarui!'); window.location='profileadmin.php';</script>";
@@ -40,7 +40,7 @@ if (isset($_POST['update_profile'])) {
             // Proses Upload Foto (Hanya jika ada file yang diupload)
             if (!empty($_FILES['profile_image']['name'])) {
                 $target_dir = "../assets/uploads/profiles/";
-                
+
                 // Buat folder jika belum ada
                 if (!file_exists($target_dir)) {
                     mkdir($target_dir, 0777, true);
@@ -49,12 +49,12 @@ if (isset($_POST['update_profile'])) {
                 $file_extension = strtolower(pathinfo($_FILES["profile_image"]["name"], PATHINFO_EXTENSION));
                 $new_filename = "profile_" . $user_id . "_" . time() . "." . $file_extension;
                 $target_file = $target_dir . $new_filename;
-                
+
                 // Validasi Format
                 $allowed = ['jpg', 'jpeg', 'png', 'gif'];
                 if (in_array($file_extension, $allowed)) {
                     // Cek size (opsional, misal max 2MB)
-                    if ($_FILES["profile_image"]["size"] <= 2000000) { 
+                    if ($_FILES["profile_image"]["size"] <= 2000000) {
                         if (move_uploaded_file($_FILES["profile_image"]["tmp_name"], $target_file)) {
                             // Update DB dengan nama file baru
                             mysqli_query($conn, "UPDATE users SET profile_image = '$new_filename' WHERE id = '$user_id'");
@@ -128,7 +128,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
         --text-muted: #6B6155;
         --border-color: #E6E1D3;
     }
-    body { 
+    body {
         font-family: 'Quicksand', sans-serif;
         background-color: var(--cream-bg);
         color: var(--text-dark);
@@ -150,12 +150,13 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
     .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
     <?= $alert ?>
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Logo" class="object-contain flex-shrink-0">
@@ -191,7 +192,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -200,6 +201,11 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                 <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Pengaturan Akun</h2></div>
             </div>
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
                     <img src="<?= $profile_pic ?>" alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
                     <div class="text-left hidden sm:block">
@@ -216,17 +222,17 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <div class="lg:col-span-1" data-aos="fade-up">
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-32 bg-[var(--deep-forest)] z-0"></div>
                     <div class="absolute top-0 left-0 w-full h-32 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-20 z-0"></div>
-                    
+
                     <div class="relative z-10">
                         <div class="w-32 h-32 mx-auto bg-white rounded-full p-2 mb-4 shadow-lg">
                             <img src="<?= $profile_pic ?>" alt="Profile" class="w-full h-full rounded-full object-cover border-4 border-[var(--cream-bg)]">
                         </div>
-                        
+
                         <h2 class="text-2xl font-bold text-[var(--text-dark)] title-font mb-1"><?= $data['full_name'] ?></h2>
                         <span class="inline-block px-4 py-1.5 rounded-full bg-[var(--light-sage)]/50 text-[var(--deep-forest)] text-xs font-bold uppercase tracking-wider mb-6">
                             Super Administrator
@@ -247,7 +253,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
             </div>
 
             <div class="lg:col-span-2 space-y-8">
-                
+
                 <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow" data-aos="fade-up" data-aos-delay="100">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-[var(--light-sage)] flex items-center justify-center text-[var(--deep-forest)]">
@@ -324,7 +330,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {

@@ -27,7 +27,7 @@ if (isset($_POST['upload_proof'])) {
                 $check = mysqli_query($conn, "SELECT status FROM orders WHERE id='$order_id'");
                 $st = mysqli_fetch_assoc($check)['status'];
                 $new_st = ($st == 'pending' || $st == 'rejected' || $st == 'waiting_approval') ? 'waiting_approval' : $st;
-                
+
                 mysqli_query($conn, "UPDATE orders SET payment_proof = '$new_name', status = '$new_st' WHERE id = '$order_id'");
                 header("Location: my_orders.php?status=success_upload"); exit;
             }
@@ -45,19 +45,19 @@ if (isset($_POST['finish_order'])) {
 // --- LOGIKA AJUKAN REFUND ---
 if (isset($_POST['request_refund'])) {
     $order_id = $_POST['order_id'];
-    
+
     // Ambil alamat Penjual
     $q_seller = mysqli_query($conn, "
-        SELECT u.address 
-        FROM users u 
-        JOIN order_items oi ON u.id = oi.seller_id 
+        SELECT u.address
+        FROM users u
+        JOIN order_items oi ON u.id = oi.seller_id
         WHERE oi.order_id = '$order_id' LIMIT 1
     ");
     $seller = mysqli_fetch_assoc($q_seller);
     $seller_address = $seller['address'] ?? 'Alamat toko tidak tersedia.';
-    
+
     mysqli_query($conn, "UPDATE orders SET status = 'refund', refund_time = NOW() WHERE id = '$order_id'");
-    
+
     $_SESSION['refund_msg'] = "Pengajuan Berhasil!<br>Silakan datang ke alamat toko: <br><b>" . $seller_address . "</b><br>untuk pengembalian dana manual.";
     header("Location: my_orders.php"); exit;
 }
@@ -92,9 +92,9 @@ while($msg = mysqli_fetch_assoc($q_msg_notif)){
 
 // 2. Status Pesanan Terakhir
 $q_order_notif = mysqli_query($conn, "
-    SELECT invoice_number, status, order_date 
-    FROM orders 
-    WHERE buyer_id = '$buyer_id' 
+    SELECT invoice_number, status, order_date
+    FROM orders
+    WHERE buyer_id = '$buyer_id'
     AND status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
     ORDER BY order_date DESC LIMIT 5
 ");
@@ -102,7 +102,7 @@ $q_order_notif = mysqli_query($conn, "
 while($ord = mysqli_fetch_assoc($q_order_notif)){
     $title = $ord['invoice_number'];
     $text = ""; $icon = ""; $color = "";
-    
+
     if($ord['status'] == 'approved') { $text = "Pesanan Diterima Penjual. Segera dikemas."; $icon = "inventory_2"; $color = "indigo"; }
     elseif($ord['status'] == 'shipping') { $text = "Paket sedang dalam perjalanan."; $icon = "local_shipping"; $color = "purple"; }
     elseif($ord['status'] == 'rejected') { $text = "Pesanan/Refund Ditolak oleh Penjual."; $icon = "cancel"; $color = "red"; }
@@ -140,6 +140,7 @@ $total_notif = count($notif_list);
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #dce3ac; border-radius: 10px; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
@@ -164,13 +165,18 @@ $total_notif = count($notif_list);
                     </form>
                 </div>
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl bg-[var(--deep-forest)] text-white shadow-md transition-colors">Pesanan</a>
                         <a href="chat_list.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Chat</a>
                     </div>
                     <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all"><span class="material-symbols-outlined">help</span></a>
-                    
+
                     <div class="relative">
                         <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all relative">
                             <span class="material-symbols-outlined">notifications</span>
@@ -219,25 +225,25 @@ $total_notif = count($notif_list);
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
-        
+
         <div class="text-center mb-10" data-aos="fade-down">
             <h1 class="text-3xl lg:text-4xl font-bold text-[var(--deep-forest)] title-font mb-2">Riwayat Pesanan</h1>
             <p class="text-[var(--text-muted)]">Pantau status pesanan dan upload bukti pembayaran Anda di sini.</p>
         </div>
 
         <div class="space-y-6" data-aos="fade-up">
-            
+
             <?php if(mysqli_num_rows($query_orders) > 0): ?>
-                <?php while($order = mysqli_fetch_assoc($query_orders)): 
+                <?php while($order = mysqli_fetch_assoc($query_orders)):
                     $order_id = $order['id'];
                     $items_q = mysqli_query($conn, "SELECT oi.*, b.title, b.image, oi.seller_id FROM order_items oi JOIN books b ON oi.book_id = b.id WHERE oi.order_id = '$order_id'");
                     $first_item = mysqli_fetch_assoc($items_q);
                     $seller_id_chat = $first_item['seller_id'];
-                    
+
                     // --- LOGIKA PESAN CHAT OTOMATIS BERDASARKAN STATUS ---
                     $inv = $order['invoice_number'];
                     $chat_msg = "";
-                    
+
                     if($order['status'] == 'pending') $chat_msg = "Halo kak, saya sudah checkout pesanan *$inv*, mohon diproses ya.";
                     elseif($order['status'] == 'rejected') $chat_msg = "Halo kak, kenapa pesanan *$inv* saya ditolak? Mohon infonya.";
                     elseif($order['status'] == 'refund') $chat_msg = "Halo kak, saya mengajukan refund untuk pesanan *$inv*.";
@@ -252,7 +258,7 @@ $total_notif = count($notif_list);
                     $status_class = 'bg-gray-100 text-gray-600';
                     $status_label = ucfirst($order['status']);
                     $need_upload = ($order['status'] == 'pending' && empty($order['payment_proof']));
-                    
+
                     if($need_upload) { $status_class = 'bg-red-100 text-red-600'; $status_label = 'Belum Bayar'; }
                     elseif($order['status'] == 'waiting_approval') { $status_class = 'bg-yellow-100 text-yellow-700'; $status_label = 'Menunggu Konfirmasi'; }
                     elseif($order['status'] == 'approved') { $status_class = 'bg-indigo-100 text-indigo-700'; $status_label = 'Diproses'; }
@@ -268,8 +274,8 @@ $total_notif = count($notif_list);
                     elseif($order['expedition_name'] == 'Shopee Express') $tracking_link = "https://spx.co.id/";
                 ?>
                 <div class="bg-white rounded-[2.5rem] p-6 border border-[var(--border-color)] card-shadow hover:shadow-lg transition-all relative overflow-hidden">
-                    
-                    <?php if($order['status'] == 'refund'): 
+
+                    <?php if($order['status'] == 'refund'):
                         $q_seller = mysqli_query($conn, "SELECT u.address, u.full_name FROM users u JOIN order_items oi ON u.id = oi.seller_id WHERE oi.order_id = '$order_id' LIMIT 1");
                         $seller = mysqli_fetch_assoc($q_seller);
                     ?>
@@ -295,7 +301,7 @@ $total_notif = count($notif_list);
                                 <h3 class="font-bold text-[var(--text-dark)] text-lg tracking-wide"><?= $order['invoice_number'] ?></h3>
                             </div>
                             <p class="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                                <span class="material-symbols-outlined text-xs">calendar_month</span> 
+                                <span class="material-symbols-outlined text-xs">calendar_month</span>
                                 <?= date('d F Y, H:i', strtotime($order['order_date'])) ?>
                             </p>
                         </div>
@@ -305,9 +311,9 @@ $total_notif = count($notif_list);
                     </div>
 
                     <div class="space-y-4 mb-6">
-                        <?php 
-                        mysqli_data_seek($items_q, 0); 
-                        while($item = mysqli_fetch_assoc($items_q)): 
+                        <?php
+                        mysqli_data_seek($items_q, 0);
+                        while($item = mysqli_fetch_assoc($items_q)):
                             $img_src = !empty($item['image']) ? "../assets/uploads/books/".$item['image'] : "../assets/images/book_placeholder.png";
                         ?>
                         <div class="flex gap-4 p-2 rounded-xl hover:bg-[var(--cream-bg)]/30 transition-colors">
@@ -336,7 +342,7 @@ $total_notif = count($notif_list);
                         </div>
 
                         <div class="flex gap-3 w-full md:w-auto flex-wrap justify-end items-center">
-                            
+
                             <a href="<?= $chat_link ?>" class="px-4 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition-all text-sm flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sm">chat</span> Chat Penjual
                             </a>
@@ -396,7 +402,7 @@ $total_notif = count($notif_list);
         </div>
 
     </main>
-    
+
     <div id="uploadModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[70]">
         <div class="modal-overlay absolute w-full h-full bg-black/50 backdrop-blur-sm" onclick="toggleModal('uploadModal')"></div>
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2rem] shadow-2xl z-50 p-8 transform scale-95 transition-all">

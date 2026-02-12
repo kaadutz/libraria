@@ -26,14 +26,14 @@ $cart_count = $cart_data['total'] ?? 0;
 // 3. HITUNG NOTIFIKASI
 $query_notif = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$buyer_id' AND is_read = 0");
 $total_chat_unread = mysqli_fetch_assoc($query_notif)['total'];
-$total_notif = $total_chat_unread; 
+$total_notif = $total_chat_unread;
 
 // --- 4. LOGIKA FILTER & PAGINATION ---
 $limit = 10; // 10 Buku per halaman
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page > 1) ? ($page * $limit) - $limit : 0;
 
-$where_clause = "WHERE b.stock > 0"; 
+$where_clause = "WHERE b.stock > 0";
 
 // Filter Pencarian
 if (isset($_GET['s']) && !empty($_GET['s'])) {
@@ -111,13 +111,14 @@ function getPaginationLink($target_page) {
         body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
         .font-logo { font-family: 'Cinzel', serif; }
         .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
-        
+
         /* Toast Animation */
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         .toast-enter { animation: slideIn 0.3s ease-out forwards; }
         .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
@@ -141,6 +142,11 @@ function getPaginationLink($target_page) {
                 </div>
 
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
@@ -182,14 +188,14 @@ function getPaginationLink($target_page) {
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        
+
         <div class="mb-8" data-aos="fade-down">
             <h1 class="text-3xl font-bold text-[var(--deep-forest)] title-font mb-2">Katalog Buku</h1>
             <p class="text-[var(--text-muted)] text-sm">Temukan <?= $total_records ?> buku menarik untuk dibaca.</p>
         </div>
 
         <form id="filterForm" action="" method="GET" class="mb-10 bg-white p-5 rounded-[2rem] border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row gap-4 md:items-end" data-aos="fade-up">
-            
+
             <?php if(isset($_GET['s'])): ?>
                 <input type="hidden" name="s" value="<?= htmlspecialchars($_GET['s']) ?>">
             <?php endif; ?>
@@ -200,9 +206,9 @@ function getPaginationLink($target_page) {
                     <span class="material-symbols-outlined absolute left-3 top-2.5 text-[var(--warm-tan)]">category</span>
                     <select name="cat" onchange="this.form.submit()" class="w-full pl-10 pr-8 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--cream-bg)] text-[var(--text-dark)] text-sm font-bold focus:border-[var(--warm-tan)] focus:ring-0 cursor-pointer shadow-inner">
                         <option value="">Semua Kategori</option>
-                        <?php 
+                        <?php
                         mysqli_data_seek($categories, 0); // Reset pointer
-                        while($cat = mysqli_fetch_assoc($categories)): 
+                        while($cat = mysqli_fetch_assoc($categories)):
                         ?>
                         <option value="<?= $cat['id'] ?>" <?= (isset($_GET['cat']) && $_GET['cat'] == $cat['id']) ? 'selected' : '' ?>>
                             <?= $cat['name'] ?>
@@ -236,17 +242,17 @@ function getPaginationLink($target_page) {
 
         <div id="book-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6" data-aos="fade-up" data-aos-delay="200">
             <?php if(mysqli_num_rows($books) > 0): ?>
-                <?php while($book = mysqli_fetch_assoc($books)): 
+                <?php while($book = mysqli_fetch_assoc($books)):
                     $img_src = !empty($book['image']) ? "../assets/uploads/books/".$book['image'] : "../assets/images/book_placeholder.png";
                     $book_author = !empty($book['author']) ? $book['author'] : 'Penulis tidak disebutkan';
                 ?>
                 <div class="bg-white rounded-[2rem] border border-[var(--border-color)] card-shadow overflow-hidden group relative flex flex-col h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                    
+
                     <div class="aspect-[2/3] bg-[var(--cream-bg)] relative overflow-hidden">
                         <span class="absolute top-3 left-3 z-10 px-2 py-1 bg-white/90 backdrop-blur text-[var(--deep-forest)] text-[10px] font-bold uppercase rounded-lg shadow-sm border border-[var(--light-sage)]"><?= $book['category_name'] ?></span>
-                        
+
                         <img src="<?= $img_src ?>" alt="<?= $book['title'] ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                        
+
                         <div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex flex-col justify-end h-full">
                             <a href="detail_book.php?id=<?= $book['id'] ?>" class="w-full py-2.5 bg-white text-[var(--deep-forest)] font-bold text-xs rounded-xl text-center hover:bg-[var(--warm-tan)] hover:text-white transition-colors shadow-lg">Lihat Detail</a>
                         </div>
@@ -256,7 +262,7 @@ function getPaginationLink($target_page) {
                         <h3 class="text-sm font-bold text-[var(--text-dark)] leading-snug mb-1 line-clamp-2 min-h-[2.5rem]" title="<?= $book['title'] ?>">
                             <?= $book['title'] ?>
                         </h3>
-                        
+
                         <p class="text-[11px] text-[var(--text-muted)] mb-2 truncate">
                             <?= $book_author ?>
                         </p>
@@ -265,7 +271,7 @@ function getPaginationLink($target_page) {
                             <span class="material-symbols-outlined text-[14px] text-[var(--text-muted)]">storefront</span>
                             <p class="text-xs text-[var(--text-muted)] truncate font-medium"><?= $book['seller_name'] ?></p>
                         </div>
-                        
+
                         <div class="mt-auto pt-3 border-t border-dashed border-[var(--border-color)]">
                             <div class="flex items-center justify-between mb-2">
                                 <div>
@@ -279,7 +285,7 @@ function getPaginationLink($target_page) {
                                     <span class="text-xs font-bold text-[var(--deep-forest)]"><?= $book['stock'] ?></span>
                                 </div>
                             </div>
-                            
+
                             <button onclick="addToCart(<?= $book['id'] ?>)" class="w-full py-2 rounded-xl bg-[var(--deep-forest)] text-white text-xs font-bold flex items-center justify-center gap-2 hover:bg-[var(--chocolate-brown)] transition-all shadow-md active:scale-95">
                                 <span class="material-symbols-outlined text-sm">add_shopping_cart</span> Tambah
                             </button>
@@ -378,7 +384,7 @@ function getPaginationLink($target_page) {
 
             toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95`;
             toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-            
+
             toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); };
             container.appendChild(toast);
             setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); } }, 3000);

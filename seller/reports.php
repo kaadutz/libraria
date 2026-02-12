@@ -15,12 +15,12 @@ $seller_id = $_SESSION['user_id'];
 $seller_name = $_SESSION['full_name'];
 
 // --- 1. LOGIKA FILTER TANGGAL ---
-$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01'); 
-$end_date   = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');     
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
+$end_date   = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
 
 // --- 2. QUERY LAPORAN ---
 $query_report = "
-    SELECT 
+    SELECT
         o.invoice_number,
         o.order_date,
         u.full_name AS buyer_name,
@@ -32,7 +32,7 @@ $query_report = "
     JOIN orders o ON oi.order_id = o.id
     JOIN books b ON oi.book_id = b.id
     JOIN users u ON o.buyer_id = u.id
-    WHERE oi.seller_id = '$seller_id' 
+    WHERE oi.seller_id = '$seller_id'
     AND o.status = 'finished'
     AND DATE(o.order_date) BETWEEN '$start_date' AND '$end_date'
     ORDER BY o.order_date DESC
@@ -118,9 +118,9 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    
+
     #sidebar, #main-content { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    
+
     /* Sidebar Styles */
     #sidebar-header { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
     #sidebar-logo { height: 5rem; width: auto; }
@@ -133,11 +133,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .sidebar-collapsed .menu-text { opacity: 0 !important; width: 0 !important; display: none; }
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -146,13 +147,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
-        
+
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
             <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
                 <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            
+
             <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori</span>
@@ -192,7 +193,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
             </a>
         </nav>
-        
+
         <div class="p-3 border-t border-[var(--border-color)]">
             <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
@@ -202,7 +203,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
+
         <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
@@ -210,8 +211,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 </button>
                 <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Laporan & Statistik</h2></div>
             </div>
-            
+
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
@@ -234,7 +240,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                             <div><p class="text-sm font-bold text-gray-800">Pesanan Baru!</p><p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu.</p></div>
                         </a>
                         <?php endif; ?>
-                        
+
                         <?php if($total_unread_chat > 0): ?>
                         <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
                             <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
@@ -390,7 +396,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     // Sidebar Logic
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
     function toggleSidebar() {
         if (isSidebarOpen) {
             sidebar.classList.remove('w-64'); sidebar.classList.add('w-20', 'sidebar-collapsed');
@@ -423,11 +429,11 @@ $total_notif = $total_new_orders + $total_unread_chat;
         var dataType = 'application/vnd.ms-excel';
         var tableSelect = document.getElementById(tableID);
         var tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
-        
+
         filename = filename ? filename + '.xls' : 'excel_data.xls';
         downloadLink = document.createElement("a");
         document.body.appendChild(downloadLink);
-        
+
         if(navigator.msSaveOrOpenBlob){
             var blob = new Blob(['\ufeff', tableHTML], { type: dataType });
             navigator.msSaveOrOpenBlob( blob, filename);

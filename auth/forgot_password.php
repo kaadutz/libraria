@@ -1,7 +1,7 @@
 <?php
 session_start();
 // Set Timezone Wajib
-date_default_timezone_set('Asia/Jakarta'); 
+date_default_timezone_set('Asia/Jakarta');
 
 include '../config/db.php';
 require '../vendor/autoload.php';
@@ -28,12 +28,12 @@ if (isset($_POST['send_otp'])) {
 
     $check = mysqli_query($conn, "SELECT * FROM users WHERE email = '$email'");
     if (mysqli_num_rows($check) > 0) {
-        
+
         $otp = rand(100000, 999999);
-        
+
         // Simpan OTP (Valid 15 Menit)
         $query = "UPDATE users SET reset_token = '$otp', reset_expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE email = '$email'";
-                  
+
         if(mysqli_query($conn, $query)) {
             // Kirim Email
             $mail = new PHPMailer(true);
@@ -105,12 +105,12 @@ if (isset($_POST['change_password'])) {
 
     if ($new_pass === $conf_pass) {
         $update = mysqli_query($conn, "UPDATE users SET password = '$new_pass', reset_token = NULL, reset_expires_at = NULL WHERE email = '$email'");
-        
+
         if($update) {
             unset($_SESSION['reset_step']);
             unset($_SESSION['reset_email']);
             // Aktifkan flag redirect untuk SweetAlert
-            $redirect_login = true; 
+            $redirect_login = true;
         } else {
             $error = "Terjadi kesalahan sistem.";
         }
@@ -134,18 +134,18 @@ if (isset($_GET['restart'])) {
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Reset Password - Libraria</title>
-    
+
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    
+
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    
+
     <!-- SweetAlert2 (Untuk Pop Up) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <style type="text/tailwindcss">
         :root {
             --deep-forest: #3E4B1C;
@@ -156,7 +156,7 @@ if (isset($_GET['restart'])) {
             --text-dark: #2D2418;
             --text-muted: #6B6155;
         }
-        body { 
+        body {
             font-family: 'Quicksand', sans-serif;
             background-color: var(--cream-bg);
             color: var(--text-dark);
@@ -164,18 +164,26 @@ if (isset($_GET['restart'])) {
         .title-font { font-weight: 700; }
         .otp-input { letter-spacing: 0.5em; text-align: center; font-size: 1.5rem; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 overflow-hidden relative">
+
+<div class="absolute top-4 right-4 z-50">
+    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:text-primary hover:bg-primary/10 transition-all flex items-center justify-center group shadow-lg backdrop-blur-sm" title="Toggle Dark Mode">
+        <span class="material-icons-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+    </button>
+</div>
+
 
     <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--light-sage)]/30 rounded-full blur-[100px] pointer-events-none"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--warm-tan)]/20 rounded-full blur-[100px] pointer-events-none"></div>
 
     <div class="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-[#E6E1D3] relative z-10 text-center transition-all duration-500" data-aos="zoom-in">
-        
+
         <div class="mb-8">
             <div class="w-20 h-20 bg-[var(--cream-bg)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--deep-forest)] shadow-inner">
                 <span class="material-symbols-outlined text-4xl">
-                    <?php 
+                    <?php
                         if ($step == 1) echo 'lock_person';
                         elseif ($step == 2) echo 'mark_email_read';
                         else echo 'key';
@@ -183,14 +191,14 @@ if (isset($_GET['restart'])) {
                 </span>
             </div>
             <h2 class="text-2xl font-bold text-[var(--deep-forest)] title-font">
-                <?php 
+                <?php
                     if ($step == 1) echo 'Lupa Password?';
                     elseif ($step == 2) echo 'Verifikasi OTP';
                     else echo 'Password Baru';
                 ?>
             </h2>
             <p class="text-[var(--text-muted)] text-sm mt-2 font-medium">
-                <?php 
+                <?php
                     if ($step == 1) echo 'Masukkan email untuk menerima kode OTP.';
                     elseif ($step == 2) echo 'Cek email Anda dan masukkan 6 digit kode.';
                     else echo 'Silakan buat password baru Anda.';
@@ -265,7 +273,7 @@ if (isset($_GET['restart'])) {
         AOS.init();
 
         // --- SWEETALERT LOGIC ---
-        
+
         <?php if($error): ?>
             Swal.fire({
                 icon: 'error',

@@ -18,7 +18,7 @@ $seller_name = $_SESSION['full_name'];
 if (isset($_POST['update_status'])) {
     $order_id = intval($_POST['order_id']);
     $status   = mysqli_real_escape_string($conn, $_POST['status']);
-    
+
     // Siapkan SQL Extra untuk alasan penolakan
     $reject_reason_sql = "";
     if ($status == 'rejected' && isset($_POST['reject_reason'])) {
@@ -57,7 +57,7 @@ if (isset($_POST['update_status'])) {
         // Gabungkan update status dan update alasan (jika ada)
         $query = "UPDATE orders SET status = '$status' $sql_extra $reject_reason_sql WHERE id = '$order_id'";
     }
-    
+
     if (mysqli_query($conn, $query)) {
         $redirect_filter = isset($_GET['filter']) ? "?filter=".$_GET['filter'] : "";
         echo "<script>alert('Status berhasil diperbarui!'); window.location.href='orders.php$redirect_filter';</script>";
@@ -86,7 +86,7 @@ $query_orders = "
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     JOIN users u ON o.buyer_id = u.id
-    WHERE oi.seller_id = '$seller_id' 
+    WHERE oi.seller_id = '$seller_id'
     $filter_sql
     ORDER BY o.order_date DESC
 ";
@@ -134,11 +134,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden">
 
 <div class="flex min-h-screen">
-    
+
     <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
         <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
@@ -191,8 +192,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 </button>
                 <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Kelola Pesanan</h2></div>
             </div>
-            
+
             <div class="flex items-center gap-4 relative">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                 <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?><span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span><?php endif; ?>
@@ -232,10 +238,10 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
         <div class="space-y-6" data-aos="fade-up">
             <?php if(mysqli_num_rows($orders) > 0): ?>
-                <?php while($order = mysqli_fetch_assoc($orders)): 
+                <?php while($order = mysqli_fetch_assoc($orders)):
                     $order_id = $order['id'];
                     $items_q = mysqli_query($conn, "SELECT oi.*, b.title, b.image FROM order_items oi JOIN books b ON oi.book_id = b.id WHERE oi.order_id = '$order_id' AND oi.seller_id = '$seller_id'");
-                    
+
                     // Status Badge
                     $status_class = 'bg-gray-100 text-gray-600';
                     $status_label = ucfirst($order['status']);
@@ -249,7 +255,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     elseif($order['status'] == 'refunded') { $status_class = 'bg-stone-200 text-stone-600 line-through'; $status_label = 'Refund Selesai'; }
                 ?>
                 <div class="bg-white rounded-[2.5rem] p-6 border border-[var(--border-color)] card-shadow">
-                    
+
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-dashed border-[var(--border-color)] pb-4 mb-4 gap-4">
                         <div class="flex items-center gap-3">
                             <div class="p-2 bg-[var(--cream-bg)] rounded-xl text-[var(--deep-forest)]"><span class="material-symbols-outlined">receipt_long</span></div>
@@ -264,9 +270,9 @@ $total_notif = $total_new_orders + $total_unread_chat;
                     </div>
 
                     <div class="space-y-4 mb-6">
-                        <?php 
+                        <?php
                         $subtotal_omset = 0;
-                        while($item = mysqli_fetch_assoc($items_q)): 
+                        while($item = mysqli_fetch_assoc($items_q)):
                             $img_src = !empty($item['image']) ? "../assets/uploads/books/".$item['image'] : "../assets/images/book_placeholder.png";
                             $subtotal_omset += ($item['price_at_transaction'] * $item['qty']);
                         ?>
@@ -290,7 +296,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                 <span class="material-symbols-outlined text-sm">image</span> Lihat Bukti Transfer
                             </a>
                         <?php endif; ?>
-                        
+
                         <?php if(!empty($order['reject_reason'])): ?>
                             <div class="mt-3 pt-3 border-t border-red-100">
                                 <p class="text-xs font-bold text-red-500 uppercase">Alasan Penolakan:</p>
@@ -306,7 +312,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         </div>
 
                         <div class="flex gap-2 w-full md:w-auto flex-wrap justify-end">
-                            
+
                             <?php if($order['status'] == 'waiting_approval' || $order['status'] == 'pending'): ?>
                                 <button onclick="openRejectModal(<?= $order['id'] ?>)" class="px-6 py-2.5 bg-red-100 text-red-600 font-bold rounded-xl hover:bg-red-200 transition-all text-sm w-full md:w-auto">Tolak</button>
                                 <form method="POST">
@@ -314,12 +320,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                     <input type="hidden" name="status" value="approved">
                                     <button type="submit" name="update_status" class="px-6 py-2.5 bg-[var(--deep-forest)] text-white font-bold rounded-xl hover:bg-[var(--chocolate-brown)] transition-all text-sm w-full md:w-auto">Terima Pesanan</button>
                                 </form>
-                            
+
                             <?php elseif($order['status'] == 'approved'): ?>
                                 <button onclick="openResiModal(<?= $order['id'] ?>)" class="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all text-sm w-full md:w-auto flex items-center justify-center gap-2">
                                     <span class="material-symbols-outlined text-lg">local_shipping</span> Input Resi
                                 </button>
-                            
+
                             <?php elseif($order['status'] == 'refund'): ?>
                                 <form method="POST" onsubmit="return confirm('Konfirmasi uang sudah dikembalikan ke pembeli?')">
                                     <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
@@ -392,12 +398,12 @@ $total_notif = $total_new_orders + $total_unread_chat;
         <form method="POST">
             <input type="hidden" name="order_id" id="reject_order_id">
             <input type="hidden" name="status" value="rejected">
-            
+
             <div class="mb-6">
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Kenapa ditolak?</label>
                 <textarea name="reject_reason" required rows="3" placeholder="Contoh: Stok habis, Bukti pembayaran tidak valid, dll..." class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:ring-0 text-sm resize-none"></textarea>
             </div>
-            
+
             <div class="flex gap-3">
                 <button type="button" onclick="toggleModal('rejectModal')" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200">Batal</button>
                 <button type="submit" name="update_status" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:opacity-90">Kirim Penolakan</button>
@@ -413,7 +419,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
     // ... (Script Sidebar & Dropdown sama seperti sebelumnya) ...
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
     function toggleSidebar() {
         if (isSidebarOpen) {
             sidebar.classList.remove('w-64'); sidebar.classList.add('w-20', 'sidebar-collapsed');
@@ -451,7 +457,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
         document.getElementById('resi_order_id').value = id;
         toggleModal('resiModal');
     }
-    
+
     // Fungsi Baru untuk Buka Modal Reject
     function openRejectModal(id) {
         document.getElementById('reject_order_id').value = id;

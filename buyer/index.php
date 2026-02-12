@@ -163,6 +163,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #dce3ac; border-radius: 10px; }
     </style>
+<script src="../assets/js/theme-manager.js"></script>
 </head>
 <body class="overflow-x-hidden min-h-screen flex flex-col">
 
@@ -188,6 +189,11 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 </div>
 
                 <div class="flex items-center gap-2">
+
+<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/10 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:bg-[var(--light-sage)]/30 transition-all flex items-center justify-center group mr-2" title="Toggle Dark Mode">
+    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" id="dark-mode-icon">dark_mode</span>
+</button>
+
                     <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
                         <a href="index.php" class="px-4 py-2 rounded-xl bg-[var(--deep-forest)] text-white shadow-md transition-all duration-300">Beranda</a>
                         <a href="all_books.php" class="px-4 py-2 rounded-xl hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300">Buku</a>
