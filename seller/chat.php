@@ -160,6 +160,10 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
+              <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+                <span class="material-symbols-outlined flex-shrink-0 text-2xl">storefront</span>
+                <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
+            </a>
         </nav>
         
         <div class="p-3 border-t border-[var(--border-color)]">
