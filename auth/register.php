@@ -14,7 +14,7 @@ if (isset($_SESSION['user_id'])) {
 // Inisialisasi variabel status untuk SweetAlert
 $register_status = null;
 $message = null;
-$error_details = null; // Untuk menampilkan pesan error spesifik jika gagal
+$error_details = null;
 
 if (isset($_POST['register'])) {
     $role       = $_POST['role'];
@@ -24,39 +24,60 @@ if (isset($_POST['register'])) {
     $password   = $_POST['password'];
     $confirm_pw = $_POST['confirm_password'];
     
-    // Logika NIK
-    $nik = NULL;
-    if ($role == 'buyer') {
-        $nik = mysqli_real_escape_string($conn, $_POST['nik']);
+    // NIK sekarang wajib untuk KEDUA ROLE
+    $nik = mysqli_real_escape_string($conn, $_POST['nik']);
+
+    // Logika Khusus Seller
+    $bank_info = NULL;
+    $bank_account = NULL;
+    if ($role == 'seller') {
+        $bank_info = mysqli_real_escape_string($conn, $_POST['bank_info']);
+        $bank_account = mysqli_real_escape_string($conn, $_POST['bank_account']);
     }
+
+    // --- VALIDASI INPUT ---
 
     // 1. Validasi Password
     if ($password !== $confirm_pw) {
         $register_status = 'error';
         $message = "Konfirmasi kata sandi tidak cocok!";
     } 
-    // 2. Validasi NIK
-    else if ($role == 'buyer' && empty($nik)) {
+    // 2. Validasi NIK (Wajib Semua)
+    else if (empty($nik)) {
         $register_status = 'error';
-        $message = "Pembeli wajib mengisi NIK!";
+        $message = "NIK wajib diisi!";
     }
+    // 3. Validasi Bank (Khusus Penjual)
+    else if ($role == 'seller' && (empty($bank_info) || empty($bank_account))) {
+        $register_status = 'error';
+        $message = "Penjual wajib mengisi Informasi Bank dan Nomor Rekening!";
+    }
+    // 4. Validasi Alamat
     else if (empty($address)) {
         $register_status = 'error';
         $message = "Alamat lengkap wajib diisi!";
     }
     else {
-        // 3. Cek Duplikat
-        $sql_check = "SELECT * FROM users WHERE email = '$email'";
-        if ($role == 'buyer') {
-            $sql_check .= " OR nik = '$nik'";
-        }
-        $check = mysqli_query($conn, $sql_check);
+        // --- VALIDASI DUPLIKAT SPESIFIK ---
         
-        if (mysqli_num_rows($check) > 0) {
+        // 5a. Cek Email Saja
+        $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email'");
+        
+        // 5b. Cek NIK Saja
+        $check_nik = mysqli_query($conn, "SELECT id FROM users WHERE nik = '$nik'");
+
+        if (mysqli_num_rows($check_email) > 0) {
             $register_status = 'error';
-            $message = "Email atau NIK tersebut sudah terdaftar!";
-        } else {
-            // 4. PROSES UPLOAD FOTO
+            $message = "Email '$email' sudah terdaftar! Silakan gunakan email lain atau login.";
+        } 
+        else if (mysqli_num_rows($check_nik) > 0) {
+            $register_status = 'error';
+            $message = "NIK '$nik' sudah terdaftar pada akun lain!";
+        } 
+        else {
+            // Jika Lolos Semua Validasi, Lanjut Upload & Insert
+            
+            // 6. PROSES UPLOAD FOTO
             $profile_image = NULL;
             $upload_ok = true;
 
@@ -87,20 +108,29 @@ if (isset($_POST['register'])) {
             }
 
             if ($upload_ok && $register_status !== 'error') {
-                // 5. Insert Data
-                $val_nik = ($nik) ? "'$nik'" : "NULL";
+                // 7. Insert Data
                 $val_img = ($profile_image) ? "'$profile_image'" : "NULL";
+                $val_bank_info = ($bank_info) ? "'$bank_info'" : "NULL";
+                $val_bank_acc = ($bank_account) ? "'$bank_account'" : "NULL";
                 
-                $query = "INSERT INTO users (email, password, full_name, nik, address, role, profile_image) 
-                          VALUES ('$email', '$password', '$full_name', $val_nik, '$address', '$role', $val_img)";
+                // Hash Password
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                $query = "INSERT INTO users (email, password, full_name, nik, address, role, profile_image, bank_info, bank_account) 
+                          VALUES ('$email', '$hashed_password', '$full_name', '$nik', '$address', '$role', $val_img, $val_bank_info, $val_bank_acc)";
                 
                 if (mysqli_query($conn, $query)) {
                     $register_status = 'success';
                     $message = "Akun berhasil dibuat! Silakan login untuk melanjutkan.";
                 } else {
+                    // Tangkap Error MySQL (Misal Race Condition)
                     $register_status = 'error';
-                    $message = "Terjadi kesalahan sistem.";
-                    $error_details = mysqli_error($conn);
+                    if (mysqli_errno($conn) == 1062) { // Kode Error Duplicate Entry
+                        $message = "Terjadi kesalahan: Email atau NIK sudah terdaftar di sistem.";
+                    } else {
+                        $message = "Terjadi kesalahan sistem database.";
+                        $error_details = mysqli_error($conn);
+                    }
                 }
             }
         }
@@ -221,7 +251,7 @@ if (isset($_POST['register'])) {
                         <p class="text-stone-500 text-sm">Lengkapi data diri untuk memulai.</p>
                     </div>
 
-                    <?php if($register_status == 'error' && empty($message)): // Hanya jika error sistem tanpa pesan spesifik ?>
+                    <?php if($register_status == 'error' && empty($message)): ?>
                         <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-4 mb-8 rounded-r-lg text-sm flex items-center gap-3 shadow-sm animate-bounce">
                             <span class="material-icons-outlined text-red-500">error</span> 
                             <span class="font-medium">Terjadi kesalahan sistem.</span>
@@ -280,15 +310,39 @@ if (isset($_POST['register'])) {
                             </div>
                         </div>
 
-                        <div id="nik_container" class="group">
+                        <div class="group">
                             <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">NIK (16 Digit)</label>
                             <div class="relative">
                                 <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">verified_user</span>
-                                <input type="number" name="nik" id="nik_input" value="<?= isset($_POST['nik']) ? htmlspecialchars($_POST['nik']) : '' ?>" required 
+                                <input type="number" name="nik" value="<?= isset($_POST['nik']) ? htmlspecialchars($_POST['nik']) : '' ?>" required 
                                     class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
                                     placeholder="Nomor Induk Kependudukan">
                             </div>
-                            <p class="text-[10px] text-stone-400 mt-1 ml-2">*Dibutuhkan untuk validasi pembeli.</p>
+                            <p class="text-[10px] text-stone-400 mt-1 ml-2">*Dibutuhkan untuk validasi keamanan akun.</p>
+                        </div>
+
+                        <div id="bank_container" class="hidden space-y-6 pt-4 border-t border-dashed border-stone-200">
+                            <h3 class="text-sm font-bold text-primary flex items-center gap-1">
+                                <span class="material-icons-outlined text-base">account_balance_wallet</span> Informasi Rekening Pencairan
+                            </h3>
+                            <div class="group">
+                                <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Nama Bank & Pemilik</label>
+                                <div class="relative">
+                                    <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">account_balance</span>
+                                    <input type="text" name="bank_info" id="bank_info_input" 
+                                        class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
+                                        placeholder="Cth: BCA a.n. Siti Aminah">
+                                </div>
+                            </div>
+                            <div class="group">
+                                <label class="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1 mb-1.5 block">Nomor Rekening</label>
+                                <div class="relative">
+                                    <span class="material-icons-outlined absolute left-4 top-3.5 text-stone-400 group-focus-within:text-primary transition-colors">credit_card</span>
+                                    <input type="number" name="bank_account" id="bank_acc_input" 
+                                        class="w-full pl-12 pr-4 py-3.5 bg-stone-50 border-stone-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-stone-800 placeholder-stone-400 font-medium text-sm"
+                                        placeholder="Cth: 1234567890">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="group">
@@ -358,24 +412,30 @@ if (isset($_POST['register'])) {
         function toggleRole(role) {
             const labelName = document.getElementById('label_name');
             const inputName = document.querySelector('input[name="full_name"]');
-            const nikContainer = document.getElementById('nik_container');
-            const nikInput = document.getElementById('nik_input');
+            
+            const bankContainer = document.getElementById('bank_container');
+            const bankInfoInput = document.getElementById('bank_info_input');
+            const bankAccInput = document.getElementById('bank_acc_input');
 
             if (role === 'seller') {
                 labelName.innerText = 'Nama Toko';
                 inputName.placeholder = 'Masukkan nama toko';
-                
-                // Hide NIK
-                nikContainer.classList.add('hidden');
-                nikInput.required = false;
-                nikInput.value = ''; 
+
+                // Tampilkan Bank
+                bankContainer.classList.remove('hidden');
+                bankInfoInput.required = true;
+                bankAccInput.required = true;
+
             } else {
                 labelName.innerText = 'Nama Lengkap';
                 inputName.placeholder = 'Masukkan nama anda';
-                
-                // Show NIK
-                nikContainer.classList.remove('hidden');
-                nikInput.required = true;
+
+                // Sembunyikan Bank
+                bankContainer.classList.add('hidden');
+                bankInfoInput.required = false;
+                bankAccInput.required = false;
+                bankInfoInput.value = '';
+                bankAccInput.value = '';
             }
         }
 
