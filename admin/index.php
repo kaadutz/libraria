@@ -39,6 +39,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
 <title>Superadmin Dashboard - Libraria</title>
 
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script src="../assets/js/theme-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -57,8 +58,6 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
     }
     body { 
         font-family: 'Quicksand', sans-serif;
-        background-color: var(--cream-bg);
-        color: var(--text-dark);
     }
     .title-font { font-weight: 700; }
     
@@ -144,16 +143,16 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
     }
 </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden transition-colors duration-300">
 
 <div class="flex min-h-screen">
     
-    <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
+    <aside id="sidebar" class="w-64 bg-white dark:bg-stone-900 border-r border-[var(--border-color)] dark:border-stone-700 flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none transition-colors duration-300">
         
-        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
+        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] dark:border-stone-700 shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
             <div class="sidebar-text-wrapper flex flex-col justify-center">
-                <h1 class="text-2xl font-bold text-[var(--deep-forest)] tracking-tight title-font leading-none">LIBRARIA</h1>
+                <h1 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] tracking-tight title-font leading-none">LIBRARIA</h1>
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Admin Panel</p>
             </div>
         </div>
@@ -164,24 +163,24 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                 <span class="font-semibold menu-text whitespace-nowrap">Dashboard</span>
             </a>
             
-            <a href="manage_users.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="manage_users.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">group</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kelola User</span>
             </a>
 
-            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori Buku</span>
             </a>
 
-            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
         </nav>
 
-        <div class="p-3 border-t border-[var(--border-color)]">
-            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
+        <div class="p-3 border-t border-[var(--border-color)] dark:border-stone-700">
+            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Sign Out</span>
             </a>
@@ -190,40 +189,44 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
         
-        <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-10 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] dark:border-stone-700 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] dark:text-[var(--warm-tan)] transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
                 
                 <div>
-                    <h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Dashboard</h2>
+                    <h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] dark:text-stone-200 hidden md:block">Dashboard</h2>
                 </div>
             </div>
 
             <div class="flex items-center gap-4 relative">
-                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
-                    
-                    <img src="<?= $profile_pic ?>" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
-                    
-                    <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $admin_name ?></p>
-                        <p class="text-[10px] text-[var(--warm-tan)] leading-none mt-1 font-bold uppercase">Super Admin</p>
-                    </div>
-                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)]">expand_more</span>
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white dark:bg-stone-700 border border-[var(--border-color)] dark:border-stone-600 flex items-center justify-center text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <div class="px-4 py-2 border-b border-gray-100">
-                        <p class="text-xs text-gray-500">Signed in as</p>
-                        <p class="text-sm font-bold text-[var(--deep-forest)] truncate"><?= $admin_name ?></p>
+                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white dark:bg-stone-700 p-1.5 pr-4 rounded-full border border-[var(--border-color)] dark:border-stone-600 card-shadow hover:shadow-md transition-all focus:outline-none">
+                    
+                    <img src="<?= $profile_pic ?>" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)] dark:border-stone-600">
+                    
+                    <div class="text-left hidden sm:block">
+                        <p class="text-xs font-bold leading-none title-font text-[var(--text-dark)] dark:text-stone-200"><?= $admin_name ?></p>
+                        <p class="text-[10px] text-[var(--warm-tan)] leading-none mt-1 font-bold uppercase">Super Admin</p>
                     </div>
-                    <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors">
+                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)] dark:text-stone-400">expand_more</span>
+                </button>
+
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <div class="px-4 py-2 border-b border-gray-100 dark:border-stone-700">
+                        <p class="text-xs text-gray-500 dark:text-stone-400">Signed in as</p>
+                        <p class="text-sm font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] truncate"><?= $admin_name ?></p>
+                    </div>
+                    <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-stone-300 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] transition-colors">
                         <span class="material-symbols-outlined text-[20px]">person</span>
                         My Profile
                     </a>
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <div class="border-t border-gray-100 dark:border-stone-700 my-1"></div>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                         <span class="material-symbols-outlined text-[20px]">logout</span>
                         Log Out
                     </a>
@@ -254,13 +257,13 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
             </section>
 
             <div class="col-span-12 lg:col-span-4 flex flex-col gap-5">
-                <div class="bg-white p-6 rounded-[2rem] border border-[var(--border-color)] card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="200">
+                <div class="bg-white dark:bg-stone-800 p-6 rounded-[2rem] border border-[var(--border-color)] dark:border-stone-700 card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="200">
                     <div class="w-14 h-14 bg-[var(--light-sage)]/40 rounded-2xl flex items-center justify-center text-[var(--deep-forest)] shadow-inner">
                         <span class="material-symbols-outlined text-3xl">group</span>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Total Pengguna</p>
-                        <h3 class="text-2xl font-bold title-font text-[var(--text-dark)]"><?= $total_users ?></h3>
+                        <p class="text-xs font-bold text-[var(--text-muted)] dark:text-stone-400 uppercase tracking-widest">Total Pengguna</p>
+                        <h3 class="text-2xl font-bold title-font text-[var(--text-dark)] dark:text-stone-200"><?= $total_users ?></h3>
                         <div class="flex gap-2 mt-1">
                             <span class="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full"><?= $count_sellers ?> Penjual</span>
                             <span class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full"><?= $count_buyers ?> Pembeli</span>
@@ -268,13 +271,13 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-[2rem] border border-[var(--border-color)] card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="300">
+                <div class="bg-white dark:bg-stone-800 p-6 rounded-[2rem] border border-[var(--border-color)] dark:border-stone-700 card-shadow flex items-center gap-5 hover:-translate-y-1 transition-transform duration-300" data-aos="fade-left" data-aos-delay="300">
                     <div class="w-14 h-14 bg-[var(--warm-tan)]/20 rounded-2xl flex items-center justify-center text-[var(--warm-tan)] shadow-inner">
                         <span class="material-symbols-outlined text-3xl">category</span>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Total Kategori</p>
-                        <h3 class="text-2xl font-bold title-font text-[var(--text-dark)]"><?= $count_cats ?></h3>
+                        <p class="text-xs font-bold text-[var(--text-muted)] dark:text-stone-400 uppercase tracking-widest">Total Kategori</p>
+                        <h3 class="text-2xl font-bold title-font text-[var(--text-dark)] dark:text-stone-200"><?= $count_cats ?></h3>
                     </div>
                 </div>
 
@@ -289,11 +292,11 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                 </div>
             </div>
 
-            <section class="col-span-12 bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow relative overflow-hidden" data-aos="fade-up" data-aos-delay="500">
+            <section class="col-span-12 bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow relative overflow-hidden" data-aos="fade-up" data-aos-delay="500">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 relative z-10 gap-4">
                     <div>
-                        <h3 class="text-xl font-bold title-font mb-1 text-[var(--text-dark)]">Pengguna Terbaru</h3>
-                        <p class="text-sm text-[var(--text-muted)] body-font font-medium">Status Online/Offline realtime</p>
+                        <h3 class="text-xl font-bold title-font mb-1 text-[var(--text-dark)] dark:text-stone-200">Pengguna Terbaru</h3>
+                        <p class="text-sm text-[var(--text-muted)] dark:text-stone-400 body-font font-medium">Status Online/Offline realtime</p>
                     </div>
                     <a href="manage_users.php" class="flex items-center gap-2 px-5 py-2.5 bg-[var(--light-sage)] text-[var(--deep-forest)] rounded-2xl font-bold hover:bg-[var(--deep-forest)] hover:text-white transition-all text-sm title-font shadow-sm hover:shadow-md">
                         <span class="material-symbols-outlined text-lg">visibility</span>
@@ -304,14 +307,14 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                 <div class="relative z-10 overflow-x-auto rounded-xl">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="text-[var(--text-muted)] text-sm border-b border-[var(--border-color)] bg-stone-50/50">
+                            <tr class="text-[var(--text-muted)] dark:text-stone-400 text-sm border-b border-[var(--border-color)] dark:border-stone-700 bg-stone-50/50 dark:bg-stone-700/50">
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider">Nama Pengguna</th>
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider">Role</th>
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider">Bergabung</th>
                                 <th class="pb-4 pt-2 px-4 font-bold uppercase tracking-wider text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm text-[var(--text-dark)]">
+                        <tbody class="text-sm text-[var(--text-dark)] dark:text-stone-200">
                             <?php if (mysqli_num_rows($recent_users_query) > 0): ?>
                                 <?php while($usr = mysqli_fetch_assoc($recent_users_query)): 
                                     $is_online = false;
@@ -322,9 +325,9 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                                         }
                                     }
                                 ?>
-                                <tr class="border-b border-[var(--border-color)] last:border-0 hover:bg-[var(--cream-bg)]/50 transition-colors">
+                                <tr class="border-b border-[var(--border-color)] dark:border-stone-700 last:border-0 hover:bg-[var(--cream-bg)]/50 dark:hover:bg-stone-700 transition-colors">
                                     <td class="py-4 px-4 font-bold flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-xs">
+                                        <div class="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-600 flex items-center justify-center text-stone-500 dark:text-stone-300 font-bold text-xs">
                                             <?= strtoupper(substr($usr['full_name'], 0, 1)) ?>
                                         </div>
                                         <?= $usr['full_name'] ?>
@@ -335,7 +338,7 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
                                             <?= ucfirst($usr['role']) ?>
                                         </span>
                                     </td>
-                                    <td class="py-4 px-4 text-stone-500"><?= date('d M Y', strtotime($usr['created_at'])) ?></td>
+                                    <td class="py-4 px-4 text-stone-500 dark:text-stone-400"><?= date('d M Y', strtotime($usr['created_at'])) ?></td>
                                     <td class="py-4 px-4 text-center">
                                         <?php if($is_online): ?>
                                             <span class="inline-flex items-center gap-1.5 text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full text-xs border border-green-100">
@@ -365,13 +368,14 @@ $recent_users_query = mysqli_query($conn, "SELECT full_name, role, last_activity
 
         </div>
 
-        <footer class="mt-12 text-center text-[var(--text-muted)] text-xs body-font pb-4">
+        <footer class="mt-12 text-center text-[var(--text-muted)] dark:text-stone-500 text-xs body-font pb-4">
             <p>© 2026 Sari Anggrek Bookstore Management.</p>
         </footer>
     </main>
 </div>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="../assets/js/theme-manager.js"></script>
 <script>
     AOS.init({ once: true, duration: 800, offset: 50 });
 

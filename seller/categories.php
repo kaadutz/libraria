@@ -15,25 +15,15 @@ $seller_id = $_SESSION['user_id'];
 $seller_name = $_SESSION['full_name'];
 
 // --- LOGIC NOTIFIKASI ---
-// 1. Hitung Pesanan Baru
-$query_notif_order = mysqli_query($conn, "SELECT COUNT(DISTINCT o.id) as total FROM orders o JOIN order_items oi ON o.id = oi.order_id WHERE oi.seller_id = '$seller_id' AND (o.status = 'pending' OR o.status = 'waiting_approval')");
-$total_new_orders = mysqli_fetch_assoc($query_notif_order)['total'];
-
-// 2. Hitung Chat Belum Dibaca
-$query_notif_chat = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$seller_id' AND is_read = 0");
-$total_unread_chat = mysqli_fetch_assoc($query_notif_chat)['total'];
-
-// 3. Total Notifikasi Gabungan
-$total_notif = $total_new_orders + $total_unread_chat;
-
+include 'includes/notification_logic.php';
 
 // --- DATA KATEGORI UTAMA ---
 // Menghitung berapa buku yang dimiliki penjual di setiap kategori
 $query = "
-    SELECT c.name, COUNT(b.id) as my_books 
-    FROM categories c 
+    SELECT c.name, COUNT(b.id) as my_books
+    FROM categories c
     LEFT JOIN books b ON c.id = b.category_id AND b.seller_id = '$seller_id'
-    GROUP BY c.id 
+    GROUP BY c.id
     ORDER BY c.name ASC
 ";
 $categories = mysqli_query($conn, $query);
@@ -47,6 +37,7 @@ $categories = mysqli_query($conn, $query);
 <title>Daftar Kategori - Libraria Seller</title>
 
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script src="../assets/js/theme-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -63,12 +54,12 @@ $categories = mysqli_query($conn, $query);
         --text-muted: #6B6155;
         --border-color: #E6E1D3;
     }
-    body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
+    body { font-family: 'Quicksand', sans-serif; }
     .font-logo { font-family: 'Cinzel', serif; }
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
     .sidebar-active { background-color: var(--sidebar-active); color: white; box-shadow: 0 4px 12px rgba(62, 75, 28, 0.3); }
-    
+
     #sidebar, #main-content, #sidebar-logo, .sidebar-text-wrapper, .menu-text { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     #sidebar-header { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
     #sidebar-logo { height: 5rem; width: auto; }
@@ -82,36 +73,36 @@ $categories = mysqli_query($conn, $query);
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden transition-colors duration-300">
 
 <div class="flex min-h-screen">
-    
-    <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
-        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
+
+    <aside id="sidebar" class="w-64 bg-white dark:bg-stone-900 border-r border-[var(--border-color)] dark:border-stone-700 flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none transition-colors duration-300">
+        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] dark:border-stone-700 shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
             <div class="sidebar-text-wrapper flex flex-col justify-center">
-                <h1 class="text-2xl font-bold text-[var(--deep-forest)] tracking-tight font-logo leading-none">LIBRARIA</h1>
+                <h1 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] tracking-tight font-logo leading-none">LIBRARIA</h1>
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
-        
+
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
-            <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
                 <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            
+
             <a href="categories.php" class="flex items-center gap-3 px-4 py-3 sidebar-active rounded-2xl transition-all group shadow-md shadow-green-900/10">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-semibold menu-text whitespace-nowrap">Kategori</span>
             </a>
 
-            <a href="products.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="products.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">inventory_2</span>
                 <span class="font-medium menu-text whitespace-nowrap">Produk Saya</span>
             </a>
 
-            <a href="orders.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="orders.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">shopping_cart_checkout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Pesanan Masuk</span>
                 <?php if($total_new_orders > 0): ?>
@@ -119,12 +110,12 @@ $categories = mysqli_query($conn, $query);
                 <?php endif; ?>
             </a>
 
-            <a href="reports.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="reports.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">bar_chart</span>
                 <span class="font-medium menu-text whitespace-nowrap">Laporan</span>
             </a>
 
-            <a href="chat.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="chat.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">chat_bubble</span>
                 <span class="font-medium menu-text whitespace-nowrap">Chat</span>
                 <?php if($total_unread_chat > 0): ?>
@@ -132,14 +123,18 @@ $categories = mysqli_query($conn, $query);
                 <?php endif; ?>
             </a>
 
-            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
+              <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
+                <span class="material-symbols-outlined flex-shrink-0 text-2xl">storefront</span>
+                <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
+            </a>
         </nav>
-        
-        <div class="p-3 border-t border-[var(--border-color)]">
-            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
+
+        <div class="p-3 border-t border-[var(--border-color)] dark:border-stone-700">
+            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Sign Out</span>
             </a>
@@ -147,72 +142,61 @@ $categories = mysqli_query($conn, $query);
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+
+        <header class="flex justify-between items-center mb-8 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] dark:border-stone-700 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] dark:text-[var(--warm-tan)] transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Daftar Kategori</h2></div>
+                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] dark:text-stone-200 hidden md:block">Daftar Kategori</h2></div>
             </div>
-            
+
             <div class="flex items-center gap-4 relative">
-                
-                <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
+
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white dark:bg-stone-700 border border-[var(--border-color)] dark:border-stone-600 flex items-center justify-center text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
+                </button>
+
+                <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white dark:bg-stone-700 border border-[var(--border-color)] dark:border-stone-600 flex items-center justify-center text-[var(--text-muted)] dark:text-stone-400 hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
-                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
-                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-stone-700 animate-ping"></span>
+                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-stone-700"></span>
                     <?php endif; ?>
                 </button>
 
-                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-                        <h4 class="font-bold text-[var(--deep-forest)]">Notifikasi</h4>
+                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-stone-700 flex justify-between items-center">
+                        <h4 class="font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)]">Notifikasi</h4>
                         <?php if($total_notif > 0): ?>
                             <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold"><?= $total_notif ?> Baru</span>
                         <?php endif; ?>
                     </div>
-                    <div class="max-h-64 overflow-y-auto">
-                        <?php if($total_new_orders > 0): ?>
-                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors">
-                            <div class="p-2 bg-orange-100 text-orange-600 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">Pesanan Baru!</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu konfirmasi.</p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
-                        
-                        <?php if($total_unread_chat > 0): ?>
-                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors">
-                            <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">Pesan Masuk</p>
-                                <p class="text-xs text-gray-500">Anda memiliki <?= $total_unread_chat ?> pesan belum dibaca.</p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
-
-                        <?php if($total_notif == 0): ?>
+                    <div class="max-h-64 overflow-y-auto custom-scroll">
+                        <?php if(!empty($notif_list)): foreach($notif_list as $n): ?>
+                            <a href="<?= $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 transition-colors border-b border-gray-50 dark:border-stone-700 last:border-0">
+                                <div class="p-2 bg-<?= $n['color'] ?>-100 text-<?= $n['color'] ?>-600 rounded-full"><span class="material-symbols-outlined text-lg"><?= $n['icon'] ?></span></div>
+                                <div><p class="text-sm font-bold text-gray-800 dark:text-stone-200"><?= $n['title'] ?></p><p class="text-xs text-gray-500 dark:text-stone-400"><?= $n['text'] ?></p></div>
+                            </a>
+                        <?php endforeach; else: ?>
                             <div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
-                    <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
+                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white dark:bg-stone-700 p-1.5 pr-4 rounded-full border border-[var(--border-color)] dark:border-stone-600 card-shadow hover:shadow-md transition-all focus:outline-none">
+                    <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)] dark:border-stone-600"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $seller_name ?></p>
-                        <p class="text-[10px] text-[var(--text-muted)] leading-none mt-1 font-bold uppercase">Seller</p>
+                        <p class="text-xs font-bold leading-none title-font text-[var(--text-dark)] dark:text-stone-200"><?= $seller_name ?></p>
+                        <p class="text-[10px] text-[var(--text-muted)] dark:text-stone-400 leading-none mt-1 font-bold uppercase">Seller</p>
                     </div>
-                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)]">expand_more</span>
+                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)] dark:text-stone-400">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-stone-300 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] transition-colors bg-[var(--light-sage)]/20 font-bold"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
+                    <div class="border-t border-gray-100 dark:border-stone-700 my-1"></div>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
             </div>
         </header>
@@ -231,25 +215,25 @@ $categories = mysqli_query($conn, $query);
 
         <div class="mb-6 relative" data-aos="fade-up" data-aos-delay="100">
             <span class="material-symbols-outlined absolute left-4 top-3 text-[var(--text-muted)]">search</span>
-            <input type="text" id="searchInput" onkeyup="searchCategory()" placeholder="Cari kategori..." 
-                   class="w-full pl-12 pr-4 py-3 rounded-2xl bg-white border border-[var(--border-color)] focus:border-[var(--warm-tan)] focus:ring-0 shadow-sm transition-all text-sm">
+            <input type="text" id="searchInput" onkeyup="searchCategory()" placeholder="Cari kategori..."
+                   class="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-stone-800 border border-[var(--border-color)] dark:border-stone-700 focus:border-[var(--warm-tan)] focus:ring-0 shadow-sm transition-all text-sm dark:text-stone-200">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoryGrid" data-aos="fade-up" data-aos-delay="200">
             <?php while($cat = mysqli_fetch_assoc($categories)): ?>
-            <div class="bg-white p-6 rounded-[2rem] border border-[var(--border-color)] card-shadow hover:-translate-y-1 transition-all group category-item">
+            <div class="bg-white dark:bg-stone-800 p-6 rounded-[2rem] border border-[var(--border-color)] dark:border-stone-700 card-shadow hover:-translate-y-1 transition-all group category-item">
                 <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 rounded-2xl bg-[var(--cream-bg)] flex items-center justify-center text-[var(--warm-tan)] group-hover:bg-[var(--warm-tan)] group-hover:text-white transition-colors">
+                    <div class="w-12 h-12 rounded-2xl bg-[var(--cream-bg)] dark:bg-stone-700 flex items-center justify-center text-[var(--warm-tan)] group-hover:bg-[var(--warm-tan)] group-hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-2xl">menu_book</span>
                     </div>
                     <?php if($cat['my_books'] > 0): ?>
-                    <span class="text-xs font-bold text-[var(--deep-forest)] bg-[var(--light-sage)]/30 px-3 py-1 rounded-full border border-[var(--light-sage)]">
+                    <span class="text-xs font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] bg-[var(--light-sage)]/30 px-3 py-1 rounded-full border border-[var(--light-sage)]">
                         <?= $cat['my_books'] ?> Buku Anda
                     </span>
                     <?php endif; ?>
                 </div>
-                <h4 class="text-lg font-bold text-[var(--text-dark)] mb-1 category-name"><?= $cat['name'] ?></h4>
-                <p class="text-xs text-[var(--text-muted)]">Kategori Resmi</p>
+                <h4 class="text-lg font-bold text-[var(--text-dark)] dark:text-stone-200 mb-1 category-name"><?= $cat['name'] ?></h4>
+                <p class="text-xs text-[var(--text-muted)] dark:text-stone-400">Kategori Resmi</p>
             </div>
             <?php endwhile; ?>
         </div>
@@ -258,12 +242,13 @@ $categories = mysqli_query($conn, $query);
 </div>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="../assets/js/theme-manager.js"></script>
 <script>
     AOS.init({ once: true, duration: 800, offset: 50 });
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {

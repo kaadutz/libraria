@@ -17,11 +17,11 @@ $alert = '';
 if (isset($_POST['update_profile'])) {
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email     = mysqli_real_escape_string($conn, $_POST['email']);
-    
+
     // 1. VALIDASI DUPLIKAT EMAIL
     // Cek apakah email sudah dipakai user lain (selain user yang sedang login)
     $check_duplicate = mysqli_query($conn, "SELECT id FROM users WHERE email = '$email' AND id != '$user_id'");
-    
+
     if (mysqli_num_rows($check_duplicate) > 0) {
         // Jika ditemukan data, tampilkan Pop Up Gagal
         $alert = "<script>
@@ -29,10 +29,10 @@ if (isset($_POST['update_profile'])) {
         </script>";
     } else {
         // Jika aman, Lanjutkan Proses Update
-        
+
         // Update Text Data Dulu
         $update = "UPDATE users SET full_name = '$full_name', email = '$email' WHERE id = '$user_id'";
-        
+
         if(mysqli_query($conn, $update)) {
             $_SESSION['full_name'] = $full_name; // Update session nama
             $alert = "<script>alert('Profil Berhasil Diperbarui!'); window.location='profileadmin.php';</script>";
@@ -40,7 +40,7 @@ if (isset($_POST['update_profile'])) {
             // Proses Upload Foto (Hanya jika ada file yang diupload)
             if (!empty($_FILES['profile_image']['name'])) {
                 $target_dir = "../assets/uploads/profiles/";
-                
+
                 // Buat folder jika belum ada
                 if (!file_exists($target_dir)) {
                     mkdir($target_dir, 0777, true);
@@ -49,12 +49,12 @@ if (isset($_POST['update_profile'])) {
                 $file_extension = strtolower(pathinfo($_FILES["profile_image"]["name"], PATHINFO_EXTENSION));
                 $new_filename = "profile_" . $user_id . "_" . time() . "." . $file_extension;
                 $target_file = $target_dir . $new_filename;
-                
+
                 // Validasi Format
                 $allowed = ['jpg', 'jpeg', 'png', 'gif'];
                 if (in_array($file_extension, $allowed)) {
                     // Cek size (opsional, misal max 2MB)
-                    if ($_FILES["profile_image"]["size"] <= 2000000) { 
+                    if ($_FILES["profile_image"]["size"] <= 2000000) {
                         if (move_uploaded_file($_FILES["profile_image"]["tmp_name"], $target_file)) {
                             // Update DB dengan nama file baru
                             mysqli_query($conn, "UPDATE users SET profile_image = '$new_filename' WHERE id = '$user_id'");
@@ -112,6 +112,7 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 <title>Profil Admin - Libraria</title>
 
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script src="../assets/js/theme-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -128,10 +129,8 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
         --text-muted: #6B6155;
         --border-color: #E6E1D3;
     }
-    body { 
+    body {
         font-family: 'Quicksand', sans-serif;
-        background-color: var(--cream-bg);
-        color: var(--text-dark);
     }
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
@@ -151,39 +150,39 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden transition-colors duration-300">
     <?= $alert ?>
 
 <div class="flex min-h-screen">
-    
-    <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
-        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
+
+    <aside id="sidebar" class="w-64 bg-white dark:bg-stone-900 border-r border-[var(--border-color)] dark:border-stone-700 flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none transition-colors duration-300">
+        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] dark:border-stone-700 shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Logo" class="object-contain flex-shrink-0">
             <div class="sidebar-text-wrapper flex flex-col justify-center">
-                <h1 class="text-2xl font-bold text-[var(--deep-forest)] tracking-tight title-font leading-none">LIBRARIA</h1>
+                <h1 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] tracking-tight title-font leading-none">LIBRARIA</h1>
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Admin Panel</p>
             </div>
         </div>
         <nav class="flex-1 px-3 space-y-2 mt-6 overflow-y-auto overflow-x-hidden">
-            <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="index.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">dashboard</span>
                 <span class="font-medium menu-text whitespace-nowrap">Dashboard</span>
             </a>
-            <a href="manage_users.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="manage_users.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">group</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kelola User</span>
             </a>
-            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori Buku</span>
             </a>
-            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
         </nav>
-        <div class="p-3 border-t border-[var(--border-color)]">
-            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
+        <div class="p-3 border-t border-[var(--border-color)] dark:border-stone-700">
+            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Sign Out</span>
             </a>
@@ -191,55 +190,75 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
     </aside>
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
-        
-        <header class="flex justify-between items-center mb-10 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+
+        <header class="flex justify-between items-center mb-10 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] dark:border-stone-700 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] dark:text-[var(--warm-tan)] transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Pengaturan Akun</h2></div>
+
+                <div>
+                    <h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] dark:text-stone-200 hidden md:block">Pengaturan Akun</h2>
+                </div>
             </div>
+
             <div class="flex items-center gap-4 relative">
-                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
-                    <img src="<?= $profile_pic ?>" alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)]">
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white dark:bg-stone-700 border border-[var(--border-color)] dark:border-stone-600 flex items-center justify-center text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
+                </button>
+
+                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white dark:bg-stone-700 p-1.5 pr-4 rounded-full border border-[var(--border-color)] dark:border-stone-600 card-shadow hover:shadow-md transition-all focus:outline-none">
+                    <img src="<?= $profile_pic ?>" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-[var(--cream-bg)] dark:border-stone-600">
                     <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $admin_name ?></p>
+                        <p class="text-xs font-bold leading-none title-font text-[var(--text-dark)] dark:text-stone-200"><?= $admin_name ?></p>
                         <p class="text-[10px] text-[var(--warm-tan)] leading-none mt-1 font-bold uppercase">Super Admin</p>
                     </div>
-                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)]">expand_more</span>
+                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)] dark:text-stone-400">expand_more</span>
                 </button>
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-[var(--deep-forest)] bg-[var(--light-sage)]/30 font-bold transition-colors"><span class="material-symbols-outlined text-[20px]">person</span> My Profile</a>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
+
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <div class="px-4 py-2 border-b border-gray-100 dark:border-stone-700">
+                        <p class="text-xs text-gray-500 dark:text-stone-400">Signed in as</p>
+                        <p class="text-sm font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] truncate"><?= $admin_name ?></p>
+                    </div>
+                    <a href="profileadmin.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-stone-300 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">person</span>
+                        My Profile
+                    </a>
+                    <div class="border-t border-gray-100 dark:border-stone-700 my-1"></div>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">logout</span>
+                        Log Out
+                    </a>
                 </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <div class="lg:col-span-1" data-aos="fade-up">
-                <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow text-center relative overflow-hidden">
+                <div class="bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-32 bg-[var(--deep-forest)] z-0"></div>
                     <div class="absolute top-0 left-0 w-full h-32 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-20 z-0"></div>
-                    
+
                     <div class="relative z-10">
-                        <div class="w-32 h-32 mx-auto bg-white rounded-full p-2 mb-4 shadow-lg">
-                            <img src="<?= $profile_pic ?>" alt="Profile" class="w-full h-full rounded-full object-cover border-4 border-[var(--cream-bg)]">
+                        <div class="w-32 h-32 mx-auto bg-white dark:bg-stone-700 rounded-full p-2 mb-4 shadow-lg">
+                            <img src="<?= $profile_pic ?>" alt="Profile" class="w-full h-full rounded-full object-cover border-4 border-[var(--cream-bg)] dark:border-stone-600">
                         </div>
-                        
-                        <h2 class="text-2xl font-bold text-[var(--text-dark)] title-font mb-1"><?= $data['full_name'] ?></h2>
-                        <span class="inline-block px-4 py-1.5 rounded-full bg-[var(--light-sage)]/50 text-[var(--deep-forest)] text-xs font-bold uppercase tracking-wider mb-6">
+
+                        <h2 class="text-2xl font-bold text-[var(--text-dark)] dark:text-stone-200 title-font mb-1"><?= $data['full_name'] ?></h2>
+                        <span class="inline-block px-4 py-1.5 rounded-full bg-[var(--light-sage)]/50 text-[var(--deep-forest)] dark:text-[var(--warm-tan)] text-xs font-bold uppercase tracking-wider mb-6">
                             Super Administrator
                         </span>
 
-                        <div class="space-y-4 text-left bg-[var(--cream-bg)]/50 p-6 rounded-3xl border border-[var(--border-color)]">
+                        <div class="space-y-4 text-left bg-[var(--cream-bg)]/50 dark:bg-stone-700/50 p-6 rounded-3xl border border-[var(--border-color)] dark:border-stone-700">
                             <div class="flex items-center gap-3 text-sm">
-                                <span class="material-symbols-outlined text-[var(--text-muted)]">mail</span>
-                                <span class="text-[var(--text-dark)] font-medium truncate"><?= $data['email'] ?></span>
+                                <span class="material-symbols-outlined text-[var(--text-muted)] dark:text-stone-400">mail</span>
+                                <span class="text-[var(--text-dark)] dark:text-stone-300 font-medium truncate"><?= $data['email'] ?></span>
                             </div>
                             <div class="flex items-center gap-3 text-sm">
-                                <span class="material-symbols-outlined text-[var(--text-muted)]">calendar_month</span>
-                                <span class="text-[var(--text-dark)] font-medium">Joined <?= date('M Y', strtotime($data['created_at'])) ?></span>
+                                <span class="material-symbols-outlined text-[var(--text-muted)] dark:text-stone-400">calendar_month</span>
+                                <span class="text-[var(--text-dark)] dark:text-stone-300 font-medium">Joined <?= date('M Y', strtotime($data['created_at'])) ?></span>
                             </div>
                         </div>
                     </div>
@@ -247,30 +266,30 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
             </div>
 
             <div class="lg:col-span-2 space-y-8">
-                
-                <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow" data-aos="fade-up" data-aos-delay="100">
+
+                <div class="bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow" data-aos="fade-up" data-aos-delay="100">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-[var(--light-sage)] flex items-center justify-center text-[var(--deep-forest)]">
                             <span class="material-symbols-outlined">edit_note</span>
                         </span>
-                        <h3 class="text-xl font-bold text-[var(--text-dark)] title-font">Edit Data Diri</h3>
+                        <h3 class="text-xl font-bold text-[var(--text-dark)] dark:text-stone-200 title-font">Edit Data Diri</h3>
                     </div>
 
                     <form action="" method="POST" enctype="multipart/form-data" class="space-y-5">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Foto Profil</label>
-                            <input type="file" name="profile_image" accept="image/*" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--deep-forest)] file:text-white hover:file:bg-[var(--chocolate-brown)]">
+                            <label class="block text-xs font-bold uppercase text-[var(--text-muted)] dark:text-stone-400 mb-1.5 ml-1">Foto Profil</label>
+                            <input type="file" name="profile_image" accept="image/*" class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-700 border-transparent focus:bg-white dark:focus:bg-stone-600 focus:border-[var(--warm-tan)] focus:ring-0 transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--deep-forest)] file:text-white hover:file:bg-[var(--chocolate-brown)]">
                             <p class="text-[10px] text-gray-400 mt-1 ml-1">Format: JPG, PNG, GIF. Maks 2MB.</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Nama Lengkap</label>
-                                <input type="text" name="full_name" value="<?= $data['full_name'] ?>" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] dark:text-stone-400 mb-1.5 ml-1">Nama Lengkap</label>
+                                <input type="text" name="full_name" value="<?= $data['full_name'] ?>" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-700 border border-transparent focus:bg-white dark:focus:bg-stone-600 focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Email Address</label>
-                                <input type="email" name="email" value="<?= $data['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] dark:text-stone-400 mb-1.5 ml-1">Email Address</label>
+                                <input type="email" name="email" value="<?= $data['email'] ?>" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-700 border border-transparent focus:bg-white dark:focus:bg-stone-600 focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
                             </div>
                         </div>
                         <div class="flex justify-end">
@@ -281,27 +300,27 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
                     </form>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow" data-aos="fade-up" data-aos-delay="200">
+                <div class="bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow" data-aos="fade-up" data-aos-delay="200">
                     <div class="flex items-center gap-3 mb-6">
                         <span class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                             <span class="material-symbols-outlined">lock_reset</span>
                         </span>
-                        <h3 class="text-xl font-bold text-[var(--text-dark)] title-font">Ganti Password</h3>
+                        <h3 class="text-xl font-bold text-[var(--text-dark)] dark:text-stone-200 title-font">Ganti Password</h3>
                     </div>
 
                     <form action="" method="POST" class="space-y-5">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Password Saat Ini</label>
-                            <input type="password" name="current_password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                            <label class="block text-xs font-bold uppercase text-[var(--text-muted)] dark:text-stone-400 mb-1.5 ml-1">Password Saat Ini</label>
+                            <input type="password" name="current_password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-700 border border-transparent focus:bg-white dark:focus:bg-stone-600 focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Password Baru</label>
-                                <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] dark:text-stone-400 mb-1.5 ml-1">Password Baru</label>
+                                <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-700 border border-transparent focus:bg-white dark:focus:bg-stone-600 focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5 ml-1">Konfirmasi Password</label>
-                                <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] border border-transparent focus:bg-white focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
+                                <label class="block text-xs font-bold uppercase text-[var(--text-muted)] dark:text-stone-400 mb-1.5 ml-1">Konfirmasi Password</label>
+                                <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl bg-[var(--cream-bg)] dark:bg-stone-700 border border-transparent focus:bg-white dark:focus:bg-stone-600 focus:border-[var(--warm-tan)] focus:ring-0 transition-all">
                             </div>
                         </div>
                         <div class="flex justify-end">
@@ -319,21 +338,24 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 </div>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="../assets/js/theme-manager.js"></script>
 <script>
     AOS.init({ once: true, duration: 800, offset: 50 });
 
     let isSidebarOpen = true;
     const sidebar = document.getElementById('sidebar');
-    const mainDiv = document.getElementById('main-content'); 
+    const mainDiv = document.getElementById('main-content');
 
     function toggleSidebar() {
         if (isSidebarOpen) {
             sidebar.classList.remove('w-64');
-            sidebar.classList.add('w-20', 'sidebar-collapsed');
+            sidebar.classList.add('w-20');
+            sidebar.classList.add('sidebar-collapsed');
             mainDiv.classList.remove('ml-64');
             mainDiv.classList.add('ml-20');
         } else {
-            sidebar.classList.remove('w-20', 'sidebar-collapsed');
+            sidebar.classList.remove('w-20');
+            sidebar.classList.remove('sidebar-collapsed');
             sidebar.classList.add('w-64');
             mainDiv.classList.remove('ml-20');
             mainDiv.classList.add('ml-64');
@@ -343,8 +365,35 @@ $profile_pic = !empty($data['profile_image']) ? "../assets/uploads/profiles/" . 
 
     function toggleProfileDropdown() {
         const dropdown = document.getElementById('profileDropdown');
-        dropdown.classList.toggle('hidden');
+        if (dropdown.classList.contains('hidden')) {
+            dropdown.classList.remove('hidden');
+            setTimeout(() => {
+                dropdown.classList.remove('opacity-0', 'scale-95');
+                dropdown.classList.add('opacity-100', 'scale-100');
+            }, 10);
+        } else {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 150);
+        }
     }
+
+    window.addEventListener('click', function(e) {
+        const button = document.querySelector('button[onclick="toggleProfileDropdown()"]');
+        const dropdown = document.getElementById('profileDropdown');
+
+        if (button && dropdown && !button.contains(e.target) && !dropdown.contains(e.target)) {
+            if (!dropdown.classList.contains('hidden')) {
+                dropdown.classList.remove('opacity-100', 'scale-100');
+                dropdown.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    dropdown.classList.add('hidden');
+                }, 150);
+            }
+        }
+    });
 </script>
 
 </body>

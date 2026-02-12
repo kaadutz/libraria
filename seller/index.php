@@ -88,10 +88,13 @@ while($row = mysqli_fetch_assoc($q_chart)) {
 }
 
 // --- 4. LOGIKA NOTIFIKASI ---
-$total_new_orders = $pending_count;
-$query_unread = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$seller_id' AND is_read = 0");
-$total_unread_chat = mysqli_fetch_assoc($query_unread)['total'];
-$total_notif = $total_new_orders + $total_unread_chat;
+include 'includes/notification_logic.php';
+// For sidebar badges (still need specific counts if desired, or reuse total_notif)
+$total_new_orders = $pending_count; // Reusing pending_count for simplicity in sidebar
+// $total_unread_chat calculation logic is inside notification_logic.php but scoped to $notif_list array.
+// We can re-query or iterate $notif_list to count chats if needed for sidebar badge.
+$sidebar_chat_count = 0;
+foreach($notif_list as $n) { if($n['type'] == 'chat') $sidebar_chat_count++; }
 ?>
 
 <!DOCTYPE html>
@@ -102,6 +105,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 <title>Dashboard - Libraria Seller</title>
 
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script src="../assets/js/theme-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -119,7 +123,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
         --text-muted: #6B6155;
         --border-color: #E6E1D3;
     }
-    body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
+    body { font-family: 'Quicksand', sans-serif; }
     .font-logo { font-family: 'Cinzel', serif; }
     .title-font { font-weight: 700; }
     .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
@@ -138,16 +142,16 @@ $total_notif = $total_new_orders + $total_unread_chat;
     .sidebar-collapsed nav a { justify-content: center; padding-left: 0; padding-right: 0; }
 </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden transition-colors duration-300">
 
 <div class="flex min-h-screen">
     
-    <aside id="sidebar" class="w-64 bg-white border-r border-[var(--border-color)] flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none">
+    <aside id="sidebar" class="w-64 bg-white dark:bg-stone-900 border-r border-[var(--border-color)] dark:border-stone-700 flex flex-col fixed h-full z-30 overflow-hidden shadow-lg lg:shadow-none transition-colors duration-300">
         
-        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] shrink-0">
+        <div id="sidebar-header" class="h-28 flex items-center border-b border-[var(--border-color)] dark:border-stone-700 shrink-0">
             <img id="sidebar-logo" src="../assets/images/logo.png" alt="Libraria Logo" class="object-contain flex-shrink-0">
             <div class="sidebar-text-wrapper flex flex-col justify-center">
-                <h1 class="text-2xl font-bold text-[var(--deep-forest)] tracking-tight font-logo leading-none">LIBRARIA</h1>
+                <h1 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] tracking-tight font-logo leading-none">LIBRARIA</h1>
                 <p class="text-xs font-bold tracking-[0.2em] text-[var(--warm-tan)] mt-1 uppercase">Seller Panel</p>
             </div>
         </div>
@@ -158,17 +162,17 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <span class="font-semibold menu-text whitespace-nowrap">Dashboard</span>
             </a>
             
-            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="categories.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">category</span>
                 <span class="font-medium menu-text whitespace-nowrap">Kategori</span>
             </a>
 
-            <a href="products.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="products.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">inventory_2</span>
                 <span class="font-medium menu-text whitespace-nowrap">Produk Saya</span>
             </a>
 
-            <a href="orders.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="orders.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">shopping_cart_checkout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Pesanan Masuk</span>
                 <?php if($total_new_orders > 0): ?>
@@ -176,30 +180,30 @@ $total_notif = $total_new_orders + $total_unread_chat;
                 <?php endif; ?>
             </a>
 
-            <a href="reports.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="reports.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">bar_chart</span>
                 <span class="font-medium menu-text whitespace-nowrap">Laporan</span>
             </a>
 
-            <a href="chat.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="chat.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">chat_bubble</span>
                 <span class="font-medium menu-text whitespace-nowrap">Chat</span>
-                <?php if($total_unread_chat > 0): ?>
-                <span class="ml-auto bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full menu-text"><?= $total_unread_chat ?></span>
+                <?php if($sidebar_chat_count > 0): ?>
+                <span class="ml-auto bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full menu-text"><?= $sidebar_chat_count ?></span>
                 <?php endif; ?>
             </a>
-              <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+              <a href="help.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">help</span>
                 <span class="font-medium menu-text whitespace-nowrap">Bantuan</span>
             </a>
-            <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] rounded-2xl transition-all group">
+            <a href="sellers.php" class="flex items-center gap-3 px-4 py-3 text-stone-500 dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] rounded-2xl transition-all group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">storefront</span>
                 <span class="font-medium menu-text whitespace-nowrap">Daftar Penjual</span>
             </a>
         </nav>
         
-        <div class="p-3 border-t border-[var(--border-color)]">
-            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors group">
+        <div class="p-3 border-t border-[var(--border-color)] dark:border-stone-700">
+            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors group">
                 <span class="material-symbols-outlined flex-shrink-0 text-2xl">logout</span>
                 <span class="font-medium menu-text whitespace-nowrap">Sign Out</span>
             </a>
@@ -208,70 +212,62 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
     <main id="main-content" class="flex-1 ml-64 p-4 lg:p-8 transition-all duration-300">
         
-        <header class="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] sticky top-4 z-20 shadow-sm" data-aos="fade-down">
+        <header class="flex justify-between items-center mb-8 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm p-4 rounded-3xl border border-[var(--border-color)] dark:border-stone-700 sticky top-4 z-20 shadow-sm" data-aos="fade-down">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] transition-colors focus:outline-none">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-[var(--light-sage)] text-[var(--deep-forest)] dark:text-[var(--warm-tan)] transition-colors focus:outline-none">
                     <span class="material-symbols-outlined">menu_open</span>
                 </button>
-                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] hidden md:block">Ringkasan Toko</h2></div>
+                <div><h2 class="text-xl lg:text-2xl title-font text-[var(--text-dark)] dark:text-stone-200 hidden md:block">Ringkasan Toko</h2></div>
             </div>
             
             <div class="flex items-center gap-4 relative">
-                <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white dark:bg-stone-700 border border-[var(--border-color)] dark:border-stone-600 flex items-center justify-center text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:text-[var(--deep-forest)] hover:shadow-md transition-all">
+                    <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
+                </button>
+
+                <button onclick="toggleDropdown('notificationDropdown')" class="w-10 h-10 rounded-full bg-white dark:bg-stone-700 border border-[var(--border-color)] dark:border-stone-600 flex items-center justify-center text-[var(--text-muted)] dark:text-stone-400 hover:text-[var(--deep-forest)] hover:shadow-md transition-all relative">
                     <span class="material-symbols-outlined">notifications</span>
                     <?php if($total_notif > 0): ?>
-                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
-                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-stone-700 animate-ping"></span>
+                        <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-stone-700"></span>
                     <?php endif; ?>
                 </button>
 
-                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-                        <h4 class="font-bold text-[var(--deep-forest)]">Notifikasi</h4>
+                <div id="notificationDropdown" class="absolute right-16 top-14 w-80 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-stone-700 flex justify-between items-center">
+                        <h4 class="font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)]">Notifikasi</h4>
                         <?php if($total_notif > 0): ?>
                             <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold"><?= $total_notif ?> Baru</span>
                         <?php endif; ?>
                     </div>
-                    <div class="max-h-64 overflow-y-auto">
-                        <?php if($total_new_orders > 0): ?>
-                        <a href="orders.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
-                            <div class="p-2 bg-orange-100 text-orange-600 rounded-full"><span class="material-symbols-outlined text-lg">shopping_bag</span></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">Pesanan Baru!</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_new_orders ?> pesanan menunggu konfirmasi.</p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
-                        
-                        <?php if($total_unread_chat > 0): ?>
-                        <a href="chat.php" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50">
-                            <div class="p-2 bg-blue-100 text-blue-600 rounded-full"><span class="material-symbols-outlined text-lg">chat</span></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">Pesan Masuk</p>
-                                <p class="text-xs text-gray-500">Ada <?= $total_unread_chat ?> pesan belum dibaca.</p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
-
-                        <?php if($total_notif == 0): ?>
+                    <div class="max-h-64 overflow-y-auto custom-scroll">
+                        <?php if(!empty($notif_list)): foreach($notif_list as $n): ?>
+                            <a href="<?= $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] dark:hover:bg-stone-700 transition-colors border-b border-gray-50 dark:border-stone-700 last:border-0">
+                                <div class="p-2 bg-<?= $n['color'] ?>-100 text-<?= $n['color'] ?>-600 rounded-full"><span class="material-symbols-outlined text-lg"><?= $n['icon'] ?></span></div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-800 dark:text-stone-200"><?= $n['title'] ?></p>
+                                    <p class="text-xs text-gray-500 dark:text-stone-400"><?= $n['text'] ?></p>
+                                </div>
+                            </a>
+                        <?php endforeach; else: ?>
                             <div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-[var(--border-color)] card-shadow hover:shadow-md transition-all focus:outline-none">
-                    <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)]"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
+                <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-3 bg-white dark:bg-stone-700 p-1.5 pr-4 rounded-full border border-[var(--border-color)] dark:border-stone-600 card-shadow hover:shadow-md transition-all focus:outline-none">
+                    <div class="w-9 h-9 rounded-full bg-[var(--warm-tan)] text-white flex items-center justify-center font-bold text-sm border-2 border-[var(--cream-bg)] dark:border-stone-600"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                     <div class="text-left hidden sm:block">
-                        <p class="text-xs font-bold leading-none title-font"><?= $seller_name ?></p>
-                        <p class="text-[10px] text-[var(--text-muted)] leading-none mt-1 font-bold uppercase">Seller</p>
+                        <p class="text-xs font-bold leading-none title-font text-[var(--text-dark)] dark:text-stone-200"><?= $seller_name ?></p>
+                        <p class="text-[10px] text-[var(--text-muted)] dark:text-stone-400 leading-none mt-1 font-bold uppercase">Seller</p>
                     </div>
-                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)]">expand_more</span>
+                    <span class="material-symbols-outlined text-[18px] text-[var(--text-muted)] dark:text-stone-400">expand_more</span>
                 </button>
 
-                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
-                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
+                <div id="profileDropdown" class="absolute right-0 top-14 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-[var(--border-color)] dark:border-stone-700 py-2 hidden transform origin-top-right transition-all z-50">
+                    <a href="profile.php" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-stone-300 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] dark:hover:text-[var(--warm-tan)] transition-colors"><span class="material-symbols-outlined text-[20px]">store</span> Profil Toko</a>
+                    <div class="border-t border-gray-100 dark:border-stone-700 my-1"></div>
+                    <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span> Log Out</a>
                 </div>
             </div>
         </header>
@@ -298,43 +294,43 @@ $total_notif = $total_new_orders + $total_unread_chat;
         </section>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" data-aos="fade-up" data-aos-delay="100">
-            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex flex-col gap-2 hover:-translate-y-1 transition-transform group">
+            <div class="bg-white dark:bg-stone-800 p-6 rounded-[2.5rem] border border-[var(--border-color)] dark:border-stone-700 card-shadow flex flex-col gap-2 hover:-translate-y-1 transition-transform group">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--deep-forest)] transition-colors">Total Pendapatan</p>
-                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] mt-1">Rp <?= number_format($revenue, 0, ',', '.') ?></h3>
+                        <p class="text-xs font-bold text-[var(--text-muted)] dark:text-stone-400 uppercase tracking-widest group-hover:text-[var(--deep-forest)] dark:group-hover:text-[var(--warm-tan)] transition-colors">Total Pendapatan</p>
+                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-stone-200 mt-1">Rp <?= number_format($revenue, 0, ',', '.') ?></h3>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-green-700 group-hover:scale-110 transition-transform"><span class="material-symbols-outlined text-2xl">payments</span></div>
                 </div>
-                <div class="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div class="w-full bg-gray-100 dark:bg-stone-700 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div class="bg-green-500 h-full rounded-full" style="width: 70%"></div>
                 </div>
                 <p class="text-[10px] text-stone-400 mt-1">Akumulasi penjualan sukses</p>
             </div>
 
-            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex flex-col gap-2 hover:-translate-y-1 transition-transform group">
+            <div class="bg-white dark:bg-stone-800 p-6 rounded-[2.5rem] border border-[var(--border-color)] dark:border-stone-700 card-shadow flex flex-col gap-2 hover:-translate-y-1 transition-transform group">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--deep-forest)] transition-colors">Pesanan Aktif</p>
-                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] mt-1"><?= $pending_count ?></h3>
+                        <p class="text-xs font-bold text-[var(--text-muted)] dark:text-stone-400 uppercase tracking-widest group-hover:text-[var(--deep-forest)] dark:group-hover:text-[var(--warm-tan)] transition-colors">Pesanan Aktif</p>
+                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-stone-200 mt-1"><?= $pending_count ?></h3>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-700 group-hover:scale-110 transition-transform"><span class="material-symbols-outlined text-2xl">shopping_cart</span></div>
                 </div>
-                <div class="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div class="w-full bg-gray-100 dark:bg-stone-700 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div class="bg-blue-500 h-full rounded-full" style="width: 45%"></div>
                 </div>
                 <p class="text-[10px] text-stone-400 mt-1">Perlu diproses segera</p>
             </div>
 
-            <div class="bg-white p-6 rounded-[2.5rem] border border-[var(--border-color)] card-shadow flex flex-col gap-2 hover:-translate-y-1 transition-transform group">
+            <div class="bg-white dark:bg-stone-800 p-6 rounded-[2.5rem] border border-[var(--border-color)] dark:border-stone-700 card-shadow flex flex-col gap-2 hover:-translate-y-1 transition-transform group">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--deep-forest)] transition-colors">Total Produk</p>
-                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] mt-1"><?= $product_count ?></h3>
+                        <p class="text-xs font-bold text-[var(--text-muted)] dark:text-stone-400 uppercase tracking-widest group-hover:text-[var(--deep-forest)] dark:group-hover:text-[var(--warm-tan)] transition-colors">Total Produk</p>
+                        <h3 class="text-2xl font-bold text-[var(--deep-forest)] dark:text-stone-200 mt-1"><?= $product_count ?></h3>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-700 group-hover:scale-110 transition-transform"><span class="material-symbols-outlined text-2xl">inventory_2</span></div>
                 </div>
-                <div class="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div class="w-full bg-gray-100 dark:bg-stone-700 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div class="bg-orange-500 h-full rounded-full" style="width: 60%"></div>
                 </div>
                 <p class="text-[10px] text-stone-400 mt-1">Buku aktif di etalase</p>
@@ -343,23 +339,23 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8" data-aos="fade-up" data-aos-delay="200">
             
-            <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow">
+            <div class="lg:col-span-2 bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h3 class="text-xl font-bold text-[var(--text-dark)] title-font">Statistik Penjualan</h3>
-                        <p class="text-xs text-[var(--text-muted)]">Performa pendapatan tahun ini</p>
+                        <h3 class="text-xl font-bold text-[var(--text-dark)] dark:text-stone-200 title-font">Statistik Penjualan</h3>
+                        <p class="text-xs text-[var(--text-muted)] dark:text-stone-400">Performa pendapatan tahun ini</p>
                     </div>
-                    <span class="text-xs bg-[var(--cream-bg)] px-3 py-1 rounded-lg font-bold text-[var(--deep-forest)] border border-[var(--border-color)]"><?= date('Y') ?></span>
+                    <span class="text-xs bg-[var(--cream-bg)] dark:bg-stone-700 px-3 py-1 rounded-lg font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] border border-[var(--border-color)] dark:border-stone-600"><?= date('Y') ?></span>
                 </div>
                 <div class="w-full h-64">
                     <canvas id="salesChart"></canvas>
                 </div>
             </div>
 
-            <div class="lg:col-span-1 bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow relative overflow-hidden">
+            <div class="lg:col-span-1 bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow relative overflow-hidden">
                 <div class="flex items-center gap-2 mb-6">
                     <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                    <h3 class="text-lg font-bold text-[var(--text-dark)] title-font">Stok Menipis</h3>
+                    <h3 class="text-lg font-bold text-[var(--text-dark)] dark:text-stone-200 title-font">Stok Menipis</h3>
                 </div>
                 
                 <div class="space-y-4">
@@ -367,13 +363,13 @@ $total_notif = $total_new_orders + $total_unread_chat;
                         <?php while($ls = mysqli_fetch_assoc($q_low_stock)): 
                             $img = !empty($ls['image']) ? "../assets/uploads/books/".$ls['image'] : "../assets/images/book_placeholder.png";
                         ?>
-                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-red-50 border border-red-100">
+                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50">
                             <img src="<?= $img ?>" class="w-10 h-14 object-cover rounded-lg shadow-sm">
                             <div class="flex-1 min-w-0">
-                                <h4 class="text-xs font-bold text-red-800 truncate"><?= $ls['title'] ?></h4>
-                                <p class="text-[10px] text-red-600 mt-0.5">Sisa stok: <b><?= $ls['stock'] ?></b></p>
+                                <h4 class="text-xs font-bold text-red-800 dark:text-red-400 truncate"><?= $ls['title'] ?></h4>
+                                <p class="text-[10px] text-red-600 dark:text-red-300 mt-0.5">Sisa stok: <b><?= $ls['stock'] ?></b></p>
                             </div>
-                            <a href="products.php" class="p-1.5 bg-white text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                            <a href="products.php" class="p-1.5 bg-white dark:bg-stone-700 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-sm">
                                 <span class="material-symbols-outlined text-base">edit</span>
                             </a>
                         </div>
@@ -397,17 +393,17 @@ $total_notif = $total_new_orders + $total_unread_chat;
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-[var(--border-color)] card-shadow" data-aos="fade-up" data-aos-delay="300">
+            <div class="lg:col-span-2 bg-white dark:bg-stone-800 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-stone-700 card-shadow" data-aos="fade-up" data-aos-delay="300">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-[var(--text-dark)] title-font">Pesanan Terbaru</h3>
-                    <a href="orders.php" class="text-xs font-bold text-[var(--deep-forest)] hover:underline flex items-center gap-1">
+                    <h3 class="text-xl font-bold text-[var(--text-dark)] dark:text-stone-200 title-font">Pesanan Terbaru</h3>
+                    <a href="orders.php" class="text-xs font-bold text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:underline flex items-center gap-1">
                         Lihat Semua <span class="material-symbols-outlined text-sm">arrow_forward</span>
                     </a>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="text-[10px] text-[var(--text-muted)] uppercase border-b border-[var(--border-color)] tracking-wider">
+                            <tr class="text-[10px] text-[var(--text-muted)] dark:text-stone-400 uppercase border-b border-[var(--border-color)] dark:border-stone-700 tracking-wider">
                                 <th class="px-4 py-3 font-bold">Invoice</th>
                                 <th class="px-4 py-3 font-bold">Pembeli</th>
                                 <th class="px-4 py-3 font-bold text-right">Total</th>
@@ -427,10 +423,10 @@ $total_notif = $total_new_orders + $total_unread_chat;
                                         default => 'bg-gray-100 text-gray-600'
                                     };
                                 ?>
-                                <tr class="hover:bg-[var(--cream-bg)]/30 transition-colors border-b border-gray-50 last:border-0 cursor-pointer" onclick="window.location='orders.php'">
-                                    <td class="px-4 py-3 font-mono font-bold text-[var(--deep-forest)] text-xs"><?= $order['invoice_number'] ?></td>
-                                    <td class="px-4 py-3 text-xs"><?= $order['buyer_name'] ?></td>
-                                    <td class="px-4 py-3 font-bold text-right text-xs">Rp <?= number_format($order['total_omset'], 0, ',', '.') ?></td>
+                                <tr class="hover:bg-[var(--cream-bg)]/30 dark:hover:bg-stone-700 transition-colors border-b border-gray-50 dark:border-stone-700 last:border-0 cursor-pointer" onclick="window.location='orders.php'">
+                                    <td class="px-4 py-3 font-mono font-bold text-[var(--deep-forest)] dark:text-stone-300 text-xs"><?= $order['invoice_number'] ?></td>
+                                    <td class="px-4 py-3 text-xs dark:text-stone-300"><?= $order['buyer_name'] ?></td>
+                                    <td class="px-4 py-3 font-bold text-right text-xs dark:text-stone-300">Rp <?= number_format($order['total_omset'], 0, ',', '.') ?></td>
                                     <td class="px-4 py-3 text-center">
                                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase <?= $status_class ?>">
                                             <?= str_replace('_', ' ', $order['status']) ?>
@@ -485,6 +481,7 @@ $total_notif = $total_new_orders + $total_unread_chat;
 </div>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="../assets/js/theme-manager.js"></script>
 <script>
     AOS.init({ once: true, duration: 800, offset: 50 });
 

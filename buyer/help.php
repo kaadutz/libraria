@@ -21,9 +21,7 @@ $profile_pic = !empty($user_data['profile_image']) ? "../assets/uploads/profiles
 $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
 $cart_count = mysqli_fetch_assoc($query_cart)['total'] ?? 0;
 
-$query_notif = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$buyer_id' AND is_read = 0");
-$total_chat_unread = mysqli_fetch_assoc($query_notif)['total'];
-$total_notif = $total_chat_unread;
+include 'includes/notification_logic.php';
 
 // --- 2. AMBIL DATA FAQ DARI DATABASE ---
 // Filter hanya untuk 'buyer' dan 'all' (Umum)
@@ -38,6 +36,7 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
     <title>Bantuan - Libraria</title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script src="../assets/js/theme-config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -53,21 +52,21 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
             --text-muted: #6B6155;
             --border-color: #E6E1D3;
         }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
+        body { font-family: 'Quicksand', sans-serif; }
         .font-logo { font-family: 'Cinzel', serif; }
-        
+
         /* Accordion Animation */
         .faq-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .faq-item.active .faq-content { max-height: 500px; transition: max-height 0.5s ease-in; }
         .faq-item.active .icon-rotator { transform: rotate(180deg); }
     </style>
 </head>
-<body class="overflow-x-hidden min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden min-h-screen flex flex-col transition-colors duration-300">
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
+        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] dark:border-stone-700 shadow-sm max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center gap-4">
-                
+
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
                     <div class="flex flex-col">
@@ -83,7 +82,11 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
+                    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-[var(--cream-bg)] dark:bg-stone-800 text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:bg-[var(--deep-forest)] hover:text-white transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
+                    </button>
+
+                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] dark:text-stone-400 mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
                         <a href="chat_list.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Chat</a>
@@ -106,14 +109,22 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
                                 <h4 class="font-bold text-[var(--deep-forest)] text-sm">Notifikasi</h4>
                                 <?php if($total_notif > 0): ?><span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold"><?= $total_notif ?> Baru</span><?php endif; ?>
                             </div>
-                            <div class="max-h-64 overflow-y-auto">
-                                <?php if($total_chat_unread > 0): ?>
-                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors">
-                                    <div class="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0"><span class="material-symbols-outlined text-lg">chat</span></div>
-                                    <div><p class="text-sm font-bold text-gray-800">Pesan Masuk</p><p class="text-xs text-gray-500">Ada <?= $total_chat_unread ?> pesan baru.</p></div>
-                                </a>
+                            <div class="max-h-64 overflow-y-auto custom-scroll">
+                                <?php if(!empty($notif_list)): ?>
+                                    <?php foreach($notif_list as $n): ?>
+                                    <a href="<?= $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50 last:border-0">
+                                        <div class="p-2 bg-<?= $n['color'] ?>-100 text-<?= $n['color'] ?>-600 rounded-full shrink-0">
+                                            <span class="material-symbols-outlined text-lg"><?= $n['icon'] ?></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-800"><?= $n['title'] ?></p>
+                                            <p class="text-xs text-gray-500"><?= $n['text'] ?></p>
+                                        </div>
+                                    </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div>
                                 <?php endif; ?>
-                                <?php if($total_notif == 0): ?><div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div><?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -144,7 +155,7 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
-        
+
         <div class="text-center mb-12" data-aos="fade-down">
             <span class="material-symbols-outlined text-5xl text-[var(--warm-tan)] mb-4">support_agent</span>
             <h1 class="text-3xl lg:text-4xl font-bold text-[var(--deep-forest)] title-font mb-2">Pusat Bantuan</h1>
@@ -152,7 +163,7 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <div class="lg:col-span-2 space-y-4" data-aos="fade-right">
                 <h3 class="text-xl font-bold text-[var(--text-dark)] mb-6">Pertanyaan Umum (FAQ)</h3>
 
@@ -187,12 +198,12 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
                     <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                     <h4 class="font-bold text-lg mb-4 flex items-center gap-2"><span class="material-symbols-outlined">support_agent</span> Layanan Pelanggan</h4>
                     <p class="text-xs text-white/80 mb-6 leading-relaxed">Tim kami siap membantu Anda Senin - Jumat (09:00 - 17:00).</p>
-                    
+
                     <a href="https://wa.me/628123456789" target="_blank" class="flex items-center gap-3 bg-white/20 p-3 rounded-xl mb-3 hover:bg-white/30 transition-colors">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="w-6 h-6">
                         <span class="text-sm font-bold">+62 812-3456-7890</span>
                     </a>
-                    
+
                     <a href="mailto:support@libraria.com" class="flex items-center gap-3 bg-white/20 p-3 rounded-xl hover:bg-white/30 transition-colors">
                         <span class="material-symbols-outlined">mail</span>
                         <span class="text-sm font-bold">support@libraria.com</span>
@@ -221,13 +232,12 @@ $query_faq = mysqli_query($conn, "SELECT * FROM qna WHERE target IN ('buyer', 'a
     </footer>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="../assets/js/theme-manager.js"></script>
     <script>
         AOS.init({ once: true, duration: 800, offset: 50 });
 
         function toggleDropdown(id) {
             const dropdown = document.getElementById(id);
-            const allDropdowns = document.querySelectorAll('[id$="Dropdown"]');
-            allDropdowns.forEach(dd => { if(dd.id !== id) dd.classList.add('hidden'); });
             if(dropdown) dropdown.classList.toggle('hidden');
         }
 

@@ -3,9 +3,9 @@ session_start();
 include '../config/db.php';
 
 // Cek Keamanan
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') { 
-    header("Location: ../auth/login.php"); 
-    exit; 
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'buyer') {
+    header("Location: ../auth/login.php");
+    exit;
 }
 
 $buyer_id = $_SESSION['user_id'];
@@ -13,7 +13,7 @@ $buyer_id = $_SESSION['user_id'];
 // --- 1. AMBIL DATA USER (ALAMAT) ---
 $q_user = mysqli_query($conn, "SELECT address, full_name, email, profile_image FROM users WHERE id = '$buyer_id'");
 $user_data = mysqli_fetch_assoc($q_user);
-$saved_address = $user_data['address']; 
+$saved_address = $user_data['address'];
 $profile_pic = !empty($user_data['profile_image']) ? "../assets/uploads/profiles/" . $user_data['profile_image'] : "../assets/images/default_profile.png";
 
 // --- 2. AMBIL DATA KERANJANG DAN PECAH PER TOKO ---
@@ -46,9 +46,9 @@ if (empty($sellers_data)) { header("Location: cart.php"); exit; }
 
 // --- 3. PROSES BAYAR & UPLOAD BUKTI ---
 if (isset($_POST['pay_now'])) {
-    
+
     // Logika Alamat Pengiriman
-    $address_choice = $_POST['address_choice']; 
+    $address_choice = $_POST['address_choice'];
     if ($address_choice == 'saved') {
         if (empty($saved_address)) $error = "Alamat di profil kosong. Silakan pilih 'Input Alamat Baru'.";
         else $address = mysqli_real_escape_string($conn, $saved_address);
@@ -70,7 +70,7 @@ if (isset($_POST['pay_now'])) {
         try {
             // Proses per toko (Masing-masing toko dapat 1 Invoice/Order)
             foreach ($sellers_data as $s_id => $data) {
-                
+
                 // 3a. Upload Bukti Transfer Khusus Toko Ini
                 $proof_name = NULL;
                 $file_ext = strtolower(pathinfo($_FILES["proof_$s_id"]['name'], PATHINFO_EXTENSION));
@@ -80,8 +80,8 @@ if (isset($_POST['pay_now'])) {
                 // 3b. Simpan Data Order (Status = waiting_approval)
                 $invoice = "INV/" . date('Ymd') . "/" . strtoupper(uniqid());
                 $seller_total = $data['total_price'];
-                
-                $q_order = "INSERT INTO orders (buyer_id, invoice_number, total_price, payment_proof, status, order_date) 
+
+                $q_order = "INSERT INTO orders (buyer_id, invoice_number, total_price, payment_proof, status, order_date)
                             VALUES ('$buyer_id', '$invoice', '$seller_total', '$proof_name', 'waiting_approval', NOW())";
                 mysqli_query($conn, $q_order);
                 $order_id = mysqli_insert_id($conn);
@@ -91,10 +91,10 @@ if (isset($_POST['pay_now'])) {
                     $book_id = $item['book_id'];
                     $qty = $item['qty'];
                     $price = $item['sell_price'];
-                    
-                    mysqli_query($conn, "INSERT INTO order_items (order_id, seller_id, book_id, qty, price_at_transaction) 
+
+                    mysqli_query($conn, "INSERT INTO order_items (order_id, seller_id, book_id, qty, price_at_transaction)
                                          VALUES ('$order_id', '$s_id', '$book_id', '$qty', '$price')");
-                    
+
                     // Kurangi stok buku
                     mysqli_query($conn, "UPDATE books SET stock = stock - $qty WHERE id = '$book_id'");
                 }
@@ -103,7 +103,7 @@ if (isset($_POST['pay_now'])) {
             // Hapus Keranjang setelah sukses
             mysqli_query($conn, "DELETE FROM carts WHERE buyer_id = '$buyer_id'");
             mysqli_commit($conn);
-            
+
             // Redirect ke halaman pesanan saya
             echo "<script>alert('Pesanan berhasil dibuat! Menunggu konfirmasi penjual.'); window.location='my_orders.php';</script>";
             exit;
@@ -122,8 +122,9 @@ if (isset($_POST['pay_now'])) {
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Checkout - Libraria</title>
-    
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script src="../assets/js/theme-config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -139,20 +140,20 @@ if (isset($_POST['pay_now'])) {
             --text-muted: #6B6155;
             --border-color: #E6E1D3;
         }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
+        body { font-family: 'Quicksand', sans-serif; }
         .font-logo { font-family: 'Cinzel', serif; }
         .card-shadow { box-shadow: 0 10px 40px -10px rgba(62, 75, 28, 0.08); }
-        
+
         /* Custom File Input Styling */
         .file-input::-webkit-file-upload-button {
             @apply px-4 py-2 bg-[var(--deep-forest)] text-white text-xs font-bold rounded-lg border-none cursor-pointer hover:bg-[var(--chocolate-brown)] transition-all mr-3;
         }
     </style>
 </head>
-<body class="overflow-x-hidden min-h-screen">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden min-h-screen transition-colors duration-300">
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" data-aos="fade-in">
-        
+
         <div class="flex items-center gap-4 mb-8">
             <a href="cart.php" class="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-sm border border-[var(--border-color)] hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300">
                 <span class="material-symbols-outlined">arrow_back</span>
@@ -170,12 +171,12 @@ if (isset($_POST['pay_now'])) {
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data" class="flex flex-col lg:flex-row gap-8">
-            
+
             <div class="flex-1 space-y-8">
-                
+
                 <?php foreach($sellers_data as $s_id => $data): ?>
                 <div class="bg-white rounded-[2rem] p-6 md:p-8 card-shadow border border-[var(--border-color)]">
-                    
+
                     <div class="flex justify-between items-center mb-6 pb-4 border-b border-dashed border-[var(--border-color)]">
                         <h2 class="font-bold text-lg text-[var(--deep-forest)] flex items-center gap-2">
                             <span class="material-symbols-outlined text-[var(--warm-tan)]">storefront</span> <?= $data['seller_name'] ?>
@@ -186,7 +187,7 @@ if (isset($_POST['pay_now'])) {
                     </div>
 
                     <div class="space-y-4 mb-6">
-                        <?php foreach($data['items'] as $item): 
+                        <?php foreach($data['items'] as $item):
                             $img = !empty($item['image']) ? "../assets/uploads/books/".$item['image'] : "../assets/images/book_placeholder.png";
                         ?>
                         <div class="flex gap-4 p-3 bg-[var(--cream-bg)]/50 rounded-xl border border-[var(--border-color)]">
@@ -216,7 +217,7 @@ if (isset($_POST['pay_now'])) {
                                 <span class="material-symbols-outlined text-sm">info</span> Wajib transfer: <b>Rp <?= number_format($data['total_price'], 0, ',', '.') ?></b>
                             </p>
                         </div>
-                        
+
                         <div class="flex flex-col justify-center">
                             <label class="text-xs font-bold uppercase text-green-800 tracking-widest mb-3">Upload Bukti Transfer:</label>
                             <input type="file" name="proof_<?= $s_id ?>" accept="image/*" required class="w-full text-sm text-gray-600 bg-white border border-green-200 rounded-xl p-2 file-input shadow-sm focus:outline-none focus:border-green-500">
@@ -231,7 +232,7 @@ if (isset($_POST['pay_now'])) {
 
             <div class="w-full lg:w-[400px] shrink-0">
                 <div class="bg-white rounded-[2rem] p-8 shadow-xl border border-[var(--border-color)] sticky top-8">
-                    
+
                     <h3 class="font-bold text-lg mb-6 text-[var(--deep-forest)] flex items-center gap-2">
                         <span class="material-symbols-outlined text-[var(--warm-tan)]">local_shipping</span> Alamat Pengiriman
                     </h3>
@@ -273,7 +274,7 @@ if (isset($_POST['pay_now'])) {
                     <p class="text-[10px] text-center text-[var(--text-muted)] mt-4 flex items-center justify-center gap-1">
                         <span class="material-symbols-outlined text-xs">verified_user</span> Transaksi Aman & Terverifikasi
                     </p>
-                    
+
                 </div>
             </div>
 
@@ -281,6 +282,7 @@ if (isset($_POST['pay_now'])) {
     </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="../assets/js/theme-manager.js"></script>
     <script>
         AOS.init({ once: true, duration: 800 });
 
@@ -293,7 +295,7 @@ if (isset($_POST['pay_now'])) {
 
             for (const radio of radios) { if (radio.checked && radio.value === 'new') isNew = true; }
 
-            if (isNew) { container.classList.remove('hidden'); input.required = true; input.focus(); } 
+            if (isNew) { container.classList.remove('hidden'); input.required = true; input.focus(); }
             else { container.classList.add('hidden'); input.required = false; }
         }
     </script>

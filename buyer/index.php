@@ -25,69 +25,7 @@ $cart_data = mysqli_fetch_assoc($query_cart);
 $cart_count = $cart_data['total'] ?? 0;
 
 // --- 3. NOTIFIKASI PINTAR (GABUNGAN CHAT & STATUS PESANAN) ---
-$notif_list = [];
-
-// A. Ambil Pesan Belum Dibaca (Akan terus muncul sampai dibaca)
-$q_msg_notif = mysqli_query($conn, "SELECT m.*, u.full_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = '$buyer_id' AND m.is_read = 0 ORDER BY m.created_at DESC");
-while($msg = mysqli_fetch_assoc($q_msg_notif)){
-    $notif_list[] = [
-        'type' => 'chat',
-        'title' => 'Pesan dari ' . explode(' ', $msg['full_name'])[0],
-        'text' => substr($msg['message'], 0, 25) . '...',
-        'icon' => 'chat',
-        'color' => 'blue',
-        'link' => 'chat_list.php',
-        'time' => strtotime($msg['created_at'])
-    ];
-}
-
-// B. Ambil 5 Status Pesanan Terakhir (Akan selalu muncul di list teratas)
-$q_order_notif = mysqli_query($conn, "
-    SELECT invoice_number, status, order_date 
-    FROM orders 
-    WHERE buyer_id = '$buyer_id' 
-    AND status IN ('approved', 'shipping', 'rejected', 'refunded', 'finished')
-    ORDER BY order_date DESC LIMIT 5
-");
-
-while($ord = mysqli_fetch_assoc($q_order_notif)){
-    $title = $ord['invoice_number'];
-    $text = ""; $icon = ""; $color = "";
-    
-    if($ord['status'] == 'approved') {
-        $text = "Pesanan Diterima Penjual. Segera dikemas.";
-        $icon = "inventory_2"; $color = "indigo";
-    } elseif($ord['status'] == 'shipping') {
-        $text = "Paket sedang dalam perjalanan.";
-        $icon = "local_shipping"; $color = "purple";
-    } elseif($ord['status'] == 'rejected') {
-        $text = "Pesanan/Refund Ditolak oleh Penjual.";
-        $icon = "cancel"; $color = "red";
-    } elseif($ord['status'] == 'refunded') {
-        $text = "Pengajuan Refund Disetujui.";
-        $icon = "currency_exchange"; $color = "green";
-    } elseif($ord['status'] == 'finished') {
-        $text = "Pesanan Selesai. Terima kasih!";
-        $icon = "check_circle"; $color = "teal";
-    }
-
-    $notif_list[] = [
-        'type' => 'order',
-        'title' => $title,
-        'text' => $text,
-        'icon' => $icon,
-        'color' => $color,
-        'link' => 'my_orders.php',
-        'time' => strtotime($ord['order_date'])
-    ];
-}
-
-// Sort notifikasi berdasarkan waktu terbaru (Chat baru vs Status baru)
-usort($notif_list, function($a, $b) {
-    return $b['time'] - $a['time'];
-});
-
-$total_notif = count($notif_list);
+include 'includes/notification_logic.php';
 
 
 // --- FEATURED BOOK ---
@@ -134,6 +72,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     <title>Beranda - Libraria</title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script src="../assets/js/theme-config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -149,7 +88,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
             --text-muted: #6B6155;
             --border-color: #E6E1D3;
         }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
+        body { font-family: 'Quicksand', sans-serif; }
         .font-logo { font-family: 'Cinzel', serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -164,12 +103,12 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
         .custom-scroll::-webkit-scrollbar-thumb { background: #dce3ac; border-radius: 10px; }
     </style>
 </head>
-<body class="overflow-x-hidden min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden min-h-screen flex flex-col transition-colors duration-300">
 
     <div id="toast-container" class="fixed top-28 right-5 z-[60] flex flex-col gap-3"></div>
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
+        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] dark:border-stone-700 shadow-sm max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
@@ -188,14 +127,18 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
+                    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-[var(--cream-bg)] dark:bg-stone-800 text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:bg-[var(--deep-forest)] hover:text-white transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
+                    </button>
+
+                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] dark:text-stone-400 mr-2">
                         <a href="index.php" class="px-4 py-2 rounded-xl bg-[var(--deep-forest)] text-white shadow-md transition-all duration-300">Beranda</a>
                         <a href="all_books.php" class="px-4 py-2 rounded-xl hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300">Buku</a>
                         <a href="my_orders.php" class="px-4 py-2 rounded-xl hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300">Pesanan</a>
                         <a href="chat_list.php" class="px-4 py-2 rounded-xl hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300">Chat</a>
                     </div>
 
-                    <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300" title="Bantuan">
+                    <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] dark:text-stone-400 hover:bg-[var(--deep-forest)] hover:text-white transition-all duration-300" title="Bantuan">
                         <span class="material-symbols-outlined">help</span>
                     </a>
 
@@ -405,6 +348,7 @@ $categories = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
     </footer>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="../assets/js/theme-manager.js"></script>
     <script>
         AOS.init({ once: true, duration: 800, offset: 50 });
         function toggleDropdown(id) {

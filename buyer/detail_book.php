@@ -23,10 +23,10 @@ $book_id = mysqli_real_escape_string($conn, $_GET['id']);
 
 // 3. Ambil Data Buku Detail
 $query = "
-    SELECT b.*, 
-           c.name as category_name, 
-           u.full_name as seller_name, 
-           u.address as seller_address, 
+    SELECT b.*,
+           c.name as category_name,
+           u.full_name as seller_name,
+           u.address as seller_address,
            u.profile_image as seller_image,
            u.id as seller_id
     FROM books b
@@ -59,9 +59,7 @@ $profile_pic = !empty($user_data['profile_image']) ? "../assets/uploads/profiles
 $query_cart = mysqli_query($conn, "SELECT SUM(qty) as total FROM carts WHERE buyer_id = '$buyer_id'");
 $cart_count = mysqli_fetch_assoc($query_cart)['total'] ?? 0;
 
-$query_notif = mysqli_query($conn, "SELECT COUNT(*) as total FROM messages WHERE receiver_id = '$buyer_id' AND is_read = 0");
-$total_chat_unread = mysqli_fetch_assoc($query_notif)['total'];
-$total_notif = $total_chat_unread;
+include 'includes/notification_logic.php';
 ?>
 
 <!DOCTYPE html>
@@ -72,6 +70,7 @@ $total_notif = $total_chat_unread;
     <title><?= $book['title'] ?> - Libraria</title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script src="../assets/js/theme-config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -87,16 +86,16 @@ $total_notif = $total_chat_unread;
             --text-muted: #6B6155;
             --border-color: #E6E1D3;
         }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--cream-bg); color: var(--text-dark); }
+        body { font-family: 'Quicksand', sans-serif; }
         .font-logo { font-family: 'Cinzel', serif; }
     </style>
 </head>
-<body class="overflow-x-hidden min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark text-stone-800 dark:text-stone-200 overflow-x-hidden min-h-screen flex flex-col transition-colors duration-300">
 
     <div id="toast-container" class="fixed top-28 right-5 z-[60] flex flex-col gap-3"></div>
 
     <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300" id="navbar">
-        <div class="bg-white/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] shadow-sm max-w-7xl mx-auto px-4 py-3">
+        <div class="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-3xl border border-[var(--border-color)] dark:border-stone-700 shadow-sm max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center gap-4">
                 <a href="index.php" class="flex items-center gap-3 group shrink-0">
                     <img src="../assets/images/logo.png" alt="Logo" class="h-10 w-auto group-hover:scale-110 transition-transform duration-300">
@@ -113,13 +112,17 @@ $total_notif = $total_chat_unread;
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] mr-2">
+                    <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-[var(--cream-bg)] dark:bg-stone-800 text-[var(--deep-forest)] dark:text-[var(--warm-tan)] hover:bg-[var(--deep-forest)] hover:text-white transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined" id="dark-mode-icon">dark_mode</span>
+                    </button>
+
+                    <div class="hidden lg:flex items-center gap-1 text-sm font-bold text-[var(--text-muted)] dark:text-stone-400 mr-2">
                         <a href="index.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Beranda</a>
                         <a href="my_orders.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Pesanan</a>
                         <a href="chat_list.php" class="px-3 py-2 rounded-xl hover:bg-[var(--cream-bg)] hover:text-[var(--deep-forest)] transition-colors">Chat</a>
                     </div>
 
-                    <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all">
+                    <a href="help.php" class="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted)] dark:text-stone-400 hover:bg-[var(--light-sage)]/30 hover:text-[var(--deep-forest)] transition-all">
                         <span class="material-symbols-outlined">help</span>
                     </a>
 
@@ -128,21 +131,30 @@ $total_notif = $total_chat_unread;
                             <span class="material-symbols-outlined">notifications</span>
                             <?php if($total_notif > 0): ?>
                                 <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
+                                <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                             <?php endif; ?>
                         </button>
-                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
+                        <div id="notificationDropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-[var(--border-color)] py-2 hidden transform origin-top-right transition-all z-50">
                             <div class="px-4 py-3 border-b border-[var(--border-color)] flex justify-between items-center">
                                 <h4 class="font-bold text-[var(--deep-forest)] text-sm">Notifikasi</h4>
                                 <?php if($total_notif > 0): ?><span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold"><?= $total_notif ?> Baru</span><?php endif; ?>
                             </div>
-                            <div class="max-h-64 overflow-y-auto">
-                                <?php if($total_chat_unread > 0): ?>
-                                <a href="chat_list.php" class="flex items-center gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors">
-                                    <div class="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0"><span class="material-symbols-outlined text-lg">chat</span></div>
-                                    <div><p class="text-sm font-bold text-gray-800">Pesan Masuk</p><p class="text-xs text-gray-500">Anda memiliki <?= $total_chat_unread ?> pesan belum dibaca.</p></div>
-                                </a>
+                            <div class="max-h-64 overflow-y-auto custom-scroll">
+                                <?php if(!empty($notif_list)): ?>
+                                    <?php foreach($notif_list as $n): ?>
+                                    <a href="<?= $n['link'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--cream-bg)] transition-colors border-b border-gray-50 last:border-0">
+                                        <div class="p-2 bg-<?= $n['color'] ?>-100 text-<?= $n['color'] ?>-600 rounded-full shrink-0">
+                                            <span class="material-symbols-outlined text-lg"><?= $n['icon'] ?></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-800"><?= $n['title'] ?></p>
+                                            <p class="text-xs text-gray-500"><?= $n['text'] ?></p>
+                                        </div>
+                                    </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div>
                                 <?php endif; ?>
-                                <?php if($total_notif == 0): ?><div class="text-center py-6 text-gray-400 text-xs italic">Tidak ada notifikasi baru.</div><?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -153,7 +165,7 @@ $total_notif = $total_chat_unread;
                     </a>
 
                     <div class="relative ml-1">
-                        <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-transparent hover:bg-white hover:shadow-sm hover:border-[var(--border-color)] transition-all duration-300 focus:outline-none">
+                        <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-[var(--warm-tan)] bg-white shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none">
                             <img src="<?= $profile_pic ?>" class="h-9 w-9 rounded-full object-cover border border-[var(--warm-tan)]">
                             <div class="hidden md:block text-left">
                                 <p class="text-[10px] text-[var(--text-muted)] font-bold uppercase leading-none mb-0.5">Hi,</p>
@@ -173,7 +185,7 @@ $total_notif = $total_chat_unread;
     </nav>
 
     <main class="flex-1 pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
-        
+
         <nav class="flex text-sm text-[var(--text-muted)] mb-6" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center"><a href="index.php" class="hover:text-[var(--deep-forest)]">Beranda</a></li>
@@ -185,9 +197,9 @@ $total_notif = $total_chat_unread;
         </nav>
 
         <div class="bg-white rounded-[2.5rem] p-6 md:p-10 border border-[var(--border-color)] shadow-xl shadow-[#3E4B1C]/5 relative overflow-hidden" data-aos="fade-up">
-            
+
             <div class="flex flex-col lg:flex-row gap-10">
-                
+
                 <div class="lg:w-5/12 flex flex-col gap-4">
                     <div class="aspect-[3/4] bg-[var(--cream-bg)] rounded-3xl overflow-hidden relative shadow-inner border border-[var(--border-color)]">
                         <img src="<?= $img_src ?>" alt="<?= $book['title'] ?>" class="w-full h-full object-cover">
@@ -195,12 +207,12 @@ $total_notif = $total_chat_unread;
                 </div>
 
                 <div class="lg:w-7/12 flex flex-col">
-                    
+
                     <div class="mb-4">
                         <span class="inline-block px-3 py-1 bg-[var(--light-sage)]/30 text-[var(--deep-forest)] rounded-lg text-xs font-bold uppercase tracking-wider mb-2 border border-[var(--light-sage)]">
                             <?= $book['category_name'] ?>
                         </span>
-                        
+
                         <h1 class="text-3xl md:text-4xl font-bold text-[var(--text-dark)] leading-tight mb-2 title-font">
                             <?= $book['title'] ?>
                         </h1>
@@ -280,6 +292,7 @@ $total_notif = $total_chat_unread;
     </footer>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="../assets/js/theme-manager.js"></script>
     <script>
         AOS.init({ once: true, duration: 800, offset: 50 });
 
@@ -340,7 +353,7 @@ $total_notif = $total_chat_unread;
             fetch('add_to_cart.php', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') { window.location.href = 'cart.php'; } 
+                if (data.status === 'success') { window.location.href = 'cart.php'; }
                 else { showToast(data.message, 'error'); }
             });
         }
@@ -353,7 +366,7 @@ $total_notif = $total_chat_unread;
 
             toast.className = `flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white ${bgColor} toast-enter cursor-pointer backdrop-blur-md bg-opacity-95`;
             toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span><p class="text-sm font-bold">${message}</p>`;
-            
+
             toast.onclick = () => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); };
             container.appendChild(toast);
             setTimeout(() => { if (toast.isConnected) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); } }, 3000);
